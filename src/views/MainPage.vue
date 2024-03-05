@@ -45,6 +45,7 @@ onMounted(async () => {
 </style>
 
 <style lang="scss">
+// set style of el-mask
 .el-loading-mask {
   z-index: $z-top;
   --el-color-primary: $primary-color;

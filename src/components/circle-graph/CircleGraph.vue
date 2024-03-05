@@ -23,7 +23,7 @@ onMounted(() => {
 #svg-container {
   width: 80%;
   height: 80%;
-  // border: 1px black solid;
-  overflow: visible;
+  border: 2px $secondary-color-dark solid;
+  // overflow: visible;
 }
 </style>

@@ -1,3 +1,4 @@
+import vegaEmbed, { vega } from "vega-embed";
 /* generate a force svg graph */
 class ForceGraph {
   constructor(containerId, nodeData, linkData) {
@@ -5,9 +6,25 @@ class ForceGraph {
     this.containerViewWidth = 1920;
     this.containerViewHeight = 1080;
     // node & link data for controling force graph
-    this.nodeData = nodeData;
-    this.linkData = linkData;
+    // add config variables into origin data
+    this.nodeData = nodeData.map((d) => ({
+      ...d,
+      showVL: false,
+      vegaLiteConfig: null, // {view, border(w/h/r), img(w/h)}
+    }));
+    this.linkData = linkData.map((d) => ({
+      ...d,
+    }));
     this.svgContainer = this.setSvgContainer(containerId);
+    // create id map for nodes & links data
+    this.nodeIdMap = new Map();
+    this.linkIdMap = new Map();
+    this.nodeData.forEach((node) => {
+      this.nodeIdMap.set(node.id, node);
+    });
+    this.linkData.forEach((link) => {
+      this.linkIdMap.set(`${link.source}_${link.target}`, link);
+    });
     // other defalt configs
     this.defaltConfig = {
       alpha: 1,
@@ -25,18 +42,9 @@ class ForceGraph {
       chargeStrength: -250,
       radialStrength: 1,
       nodeR: 10,
-      rIncrease: 100,
+      rIncrease: 250,
     };
     this.durationTime = 150;
-    // create id map for nodes & links data
-    this.nodeIdMap = new Map();
-    this.linkIdMap = new Map();
-    nodeData.forEach((node) => {
-      this.nodeIdMap.set(node.id, node);
-    });
-    linkData.forEach((link) => {
-      this.linkIdMap.set(`${link.source}_${link.target}`, link);
-    });
   }
 
   /* set attr of svg_container
@@ -53,18 +61,23 @@ class ForceGraph {
 
   /* draw force graph within a svg_container */
   createForceGraph(options = {}) {
+    this.drawBackground();
+    const svgContainer = this.svgContainer;
     // freeze the 'zero' node
     const zeroData = this.nodeIdMap.get(0);
     zeroData.fx = this.containerViewWidth / 2;
     zeroData.fy = this.containerViewHeight / 2;
     // processing
     const config = { ...this.defaltConfig, ...options };
-    const nodeTopG = this.createNodeGElement();
-    const linkTopG = this.createLinkGElement();
-    const nodeGs = nodeTopG.selectChildren("g");
-    const linkGs = linkTopG.selectChildren("g");
+    // create 2 top elements
+    const linkTopG = svgContainer.append("g").attr("class", "topg-link");
+    const nodeTopG = svgContainer.append("g").attr("class", "topg-node");
+    this.updateDomByData();
 
     const tick = function () {
+      const nodeGs = nodeTopG.selectChildren("g");
+      const linkGs = linkTopG.selectChildren("g");
+
       linkGs
         .selectChildren(".base-line")
         .attr("x1", function () {
@@ -88,11 +101,23 @@ class ForceGraph {
     };
 
     const simulation = this.createSimulation(tick, config);
-    this.creatRealDom(nodeGs, linkGs);
     this.createDrag(simulation, nodeTopG);
     this.createZoom(simulation);
   }
 
+  drawBackground({ rIncrease = this.defaltConfig.rIncrease } = {}) {
+    const backgroundG = this.svgContainer.append("g").attr("class", "topg-bg");
+    for (let i = 4; i > 0; i--) {
+      backgroundG
+        .append("circle")
+        .attr("r", i * rIncrease)
+        .attr("cx", this.containerViewWidth / 2)
+        .attr("cy", this.containerViewHeight / 2)
+        .attr("stroke", "#aaa")
+        .attr("stroke-width", 1)
+        .attr("fill", "#fff");
+    }
+  }
   /* create zoom & apply it to according svg elements */
   createZoom(simulation, { scale = [0.3, 8] } = {}) {
     const self = this;
@@ -164,21 +189,6 @@ class ForceGraph {
       .call(dragDefine);
   }
 
-  /* create all 'real' svg elements,
-   * e.g. circle for nodes, line for links */
-  creatRealDom(nodeGs, linkGs) {
-    const lineGroup = linkGs
-      .append("line")
-      .attr("class", "base-line")
-      .attr("stroke", "#555")
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", 1);
-    const circleGroup = nodeGs
-      .append("circle")
-      .attr("class", "base-circle")
-      .attr("r", 10)
-      .attr("fill", "#aaa");
-  }
   /* create force simulation
    * return simulation */
   createSimulation(
@@ -239,49 +249,230 @@ class ForceGraph {
     return simulation;
   }
 
-  /* create virtual g_element for each node & bind them to data
-   * return top g_element of g_groups*/
-  createNodeGElement({ durationTime = this.durationTime } = {}) {
-    const data = this.nodeData;
+  /* 'refresh' DOM by new data*/
+  updateDomByData({
+    circleR = 10,
+    circleFill = "#aaa",
+    borderFill = "#fff",
+    borderStroke = "#ccc",
+    borderWidth = 1.5,
+    durationTime = this.durationTime,
+  } = {}) {
+    const self = this;
+    const nodeData = this.nodeData;
+    const linkData = this.linkData;
     const svgContainer = this.svgContainer;
-    const nodeTopG = svgContainer.append("g").attr("class", "topg-node");
+    const nodeTopG = svgContainer.selectChild(".topg-node");
+    const linkTopG = svgContainer.selectChild(".topg-link");
     nodeTopG
       .selectAll("g")
-      .data(data, (d) => d.id)
-      .join((enter) =>
-        enter
-          .append("g")
-          .attr("opacity", 0)
-          .transition()
-          .duration(durationTime)
-          .attr("opacity", 1)
+      .data(nodeData, (d) => d.id)
+      .join(
+        (enter) => {
+          const nodeGs = enter.append("g");
+          // add base circle
+          nodeGs
+            .append("circle")
+            .attr("class", "base-circle")
+            .attr("cursor", "pointer")
+            .style("transition", "transform 0.2s")
+            .attr("r", (d) => (d.id === 0 ? circleR * 1.5 : circleR))
+            .attr("fill", (d) => (d.id === 0 ? "red" : circleFill))
+            .attr("display", function () {
+              const data = d3.select(this.parentNode).datum();
+              return data.showVL ? "none" : null;
+            })
+            .on("click", function () {
+              // get top g & data of this node
+              const topG = d3.select(this.parentNode);
+              const data = topG.datum();
+              if (data.id !== 0) {
+                // change data
+                data.showVL = false;
+                // switch display btw circle and vega-lite
+                topG.selectChild(".base-circle").attr("display", "none");
+                topG.selectChild(".vegalite-container").attr("display", null);
+                // draw vega-lite graph
+                self.drawVegaLite(topG);
+              }
+            });
+
+          // add vega-lite related
+          // g as vega-lite container
+          const vegeLiteContainers = nodeGs
+            .append("g")
+            .attr("class", "vegalite-container")
+            .attr("display", function () {
+              const data = d3.select(this.parentNode).datum();
+              return !data.showVL ? "none" : null;
+            });
+          // rect as border
+          const borders = vegeLiteContainers
+            .append("rect")
+            .attr("class", "border")
+            .attr("fill", borderFill)
+            .attr("stroke", borderStroke)
+            .attr("stroke-width", borderWidth)
+            .attr("pointer-events", "none");
+          // rect as headers
+          const headers = vegeLiteContainers
+            .append("g")
+            .attr("class", "header");
+
+          const vegaLiteBoxes = vegeLiteContainers
+            .append("g")
+            .attr("class", "vegalite-box");
+
+          // add animation
+          nodeGs
+            .attr("opacity", 0)
+            .transition()
+            .duration(durationTime)
+            .attr("opacity", 1);
+        },
+        (update) => update,
+        (exit) => {
+          exit
+            .attr("opacity", 1)
+            .transition()
+            .duration(durationTime)
+            .attr("opacity", 0)
+            .remove();
+        }
       );
-    return nodeTopG;
-  }
-  /* create virtual g_element for each link & bind them to data
-   * return top g_element of g_groups */
-  createLinkGElement({ durationTime = this.durationTime } = {}) {
-    const data = this.linkData;
-    const svgContainer = this.svgContainer;
-    const linkTopG = svgContainer.append("g").attr("class", "topg-link");
     linkTopG
       .selectAll("g")
-      .data(data, (d) => {
+      .data(linkData, (d) => {
         if (typeof d.source === "object") {
           return `${d.source.id}_${d.target.id}`;
         } else {
           return `${d.source}_${d.target}`;
         }
       })
-      .join((enter) =>
-        enter
-          .append("g")
-          .attr("opacity", 0)
+      .join(
+        (enter) => {
+          const linkGs = enter.append("g");
+          linkGs
+            .append("line")
+            .attr("class", "base-line")
+            .attr("stroke", "#555")
+            .attr("stroke-opacity", 0.6)
+            .attr("stroke-width", 1);
+
+          // add animation
+          linkGs
+            .attr("opacity", 0)
+            .transition()
+            .duration(durationTime)
+            .attr("opacity", 1);
+        },
+        (update) => update,
+        (exit) => {
+          exit
+            .attr("opacity", 1)
+            .transition()
+            .duration(durationTime)
+            .attr("opacity", 0)
+            .remove();
+        }
+      );
+  }
+
+  /* show vega-lite graph within topG */
+  drawVegaLite(
+    topG,
+    {
+      durationTime = this.durationTime,
+      vegaLiteWidth = 100,
+      vegaLiteHeight = 150,
+      borderWidthOffset = 3,
+      borderHeightOffset = 8,
+      borderCornerR = 10,
+    } = {}
+  ) {
+    let configData = topG.datum().vegaLiteConfig;
+
+    const vegaLiteContainer = topG.selectChild(".vegalite-container");
+    const vegaLiteBox = vegaLiteContainer.selectChild(".vegalite-box");
+    if (configData) {
+    } else {
+      // create new config data
+      configData = {
+        view: null,
+        border: null,
+        img: null,
+      };
+      const data = topG.datum();
+      data.vegaLiteConfig = configData;
+      // create new vega-lite svg
+      const vlSpec = JSON.parse(data["vega-lite"]);
+      // add options
+      vlSpec["width"] = vegaLiteWidth;
+      vlSpec["height"] = vegaLiteHeight;
+      vlSpec["usermeta"] = { embedOptions: { renderer: "svg" } };
+      // generate vega-lite svg
+      vegaEmbed(vegaLiteBox.node(), vlSpec).then((result) => {
+        // get view data
+        const view = result.view.background("transparent");
+        configData.view = view;
+        // get svg element, and reposition it
+        const vegaLiteSvg = vegaLiteBox
+          .select("svg")
+          .attr("class", "svg-graph");
+        vegaLiteBox.style(
+          "transform",
+          `translate(${borderWidthOffset}px, ${borderHeightOffset}px)`
+        );
+        // remove unrelated generated components
+        vegaLiteBox.node().appendChild(vegaLiteSvg.node());
+        vegaLiteBox.selectChild("div").remove();
+        vegaLiteBox.selectChild("details").remove();
+        // get w&h of svg
+        const graphWidth = vegaLiteSvg.attr("width");
+        const graphHeight = vegaLiteSvg.attr("height");
+        // set img config
+        configData.img = {
+          width: graphWidth,
+          height: graphHeight,
+        };
+        // compute position/shape data of components
+        const borderWidth = +graphWidth + borderWidthOffset * 2;
+        const borderHeight = +graphHeight + borderHeightOffset * 2;
+        const translateX = borderWidth / 2;
+        const translateY = borderHeight / 2;
+        // set border config
+        configData.border = {
+          r: Math.sqrt(Math.pow(translateX, 2) + Math.pow(translateY, 2)),
+          width: borderWidth,
+          height: borderHeight,
+        };
+
+        // set position of whole vega-lite graph
+        vegaLiteContainer.style(
+          "transform",
+          `translate(${-borderWidth / 2}px, ${-borderHeight / 2}px)`
+        );
+        // set position of other components & add animation
+        vegaLiteContainer
+          .selectChild(".border")
+          .attr("rx", borderCornerR)
+          .attr("width", 0)
+          .attr("height", 0)
           .transition()
           .duration(durationTime)
-          .attr("opacity", 1)
-      );
-    return linkTopG;
+
+          .attr("width", borderWidth)
+          .attr("height", borderHeight);
+        // add animation of svg
+        vegaLiteSvg
+          .attr("fill-opacity", 0)
+          .attr("stroke-opacity", 0)
+          .transition()
+          .duration(durationTime + 25)
+          .attr("fill-opacity", 1)
+          .attr("stroke-opacity", 1);
+      });
+    }
   }
 }
 
