@@ -9,6 +9,11 @@ import BaseCard from "./components/ui/BaseCard.vue";
 import BaseButton from "./components/ui/BaseButton.vue";
 import SvgIcon from "./components/ui/SvgIcon.vue";
 
+import * as d3 from "d3";
+
+// global variables
+window.d3 = d3;
+
 const app = createApp(App);
 app.use(router);
 app.use(store);

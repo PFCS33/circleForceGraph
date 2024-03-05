@@ -6,9 +6,7 @@
   </router-view>
 </template>
 
-<script>
-export default {};
-</script>
+<script setup></script>
 
 <style lang="scss">
 @use "@/assets/styles/main.scss";
