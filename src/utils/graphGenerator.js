@@ -10,7 +10,7 @@ class ForceGraph {
     this.nodeData = nodeData.map((d) => ({
       ...d,
       showVL: false,
-      vegaLiteConfig: null, // {view, border(w/h/r), img(w/h)}
+      vlConfig: null, // {view, border(w/h/r), img(w/h)}
     }));
     this.linkData = linkData.map((d) => ({
       ...d,
@@ -29,7 +29,8 @@ class ForceGraph {
     // set initial value of max_layer
     this.maxLayer = d3.max(this.nodeData, (d) => d.layer);
     // other defalt configs
-    this.defaltConfig = {
+    this.durationTime = 150;
+    this.defaltForceConfig = {
       alpha: 1,
       alphaMin: 0.001,
       alphaDecay: 1 - Math.pow(0.001, 1 / 300),
@@ -47,7 +48,25 @@ class ForceGraph {
       nodeR: 10,
       rIncrease: 250,
     };
-    this.durationTime = 150;
+    this.defaltDomConfig = {
+      // base circle
+      circleR: 10,
+      circleFill: "#aaa",
+      // vl border
+      borderFill: "#fff",
+      borderStroke: "#ccc",
+      borderWidth: 1.5,
+      // vl icon
+      vlIconSize: 15,
+      vlIconGap: 2,
+      vlIconColor: "#aaa",
+      // other
+      durationTime: this.durationTime,
+      // bg circle
+      bgCircleStroke: "#aaa",
+      bgCircleWidth: 2.5,
+      rIncrease: this.defaltForceConfig.rIncrease,
+    };
   }
 
   /* set attr of svg_container
@@ -71,11 +90,12 @@ class ForceGraph {
     zeroData.fx = this.containerViewWidth / 2;
     zeroData.fy = this.containerViewHeight / 2;
     // processing
-    const config = { ...this.defaltConfig, ...options };
+    const config = { ...this.defaltForceConfig, ...options };
     // create 3 top elements
-    const backgroundG = svgContainer.append("g").attr("class", "topg-bg");
+    const bgTopG = svgContainer.append("g").attr("class", "topg-bg");
     const linkTopG = svgContainer.append("g").attr("class", "topg-link");
     const nodeTopG = svgContainer.append("g").attr("class", "topg-node");
+    // update dom by node & link data
     this.updateDomByData();
 
     const tick = function () {
@@ -109,19 +129,6 @@ class ForceGraph {
     this.createZoom(simulation);
   }
 
-  drawBackground({ rIncrease = this.defaltConfig.rIncrease } = {}) {
-    const backgroundG = this.svgContainer.append("g").attr("class", "topg-bg");
-    for (let i = 4; i > 0; i--) {
-      backgroundG
-        .append("circle")
-        .attr("r", (d) => d * rIncrease)
-        .attr("cx", this.containerViewWidth / 2)
-        .attr("cy", this.containerViewHeight / 2)
-        .attr("stroke", "#aaa")
-        .attr("stroke-width", 1)
-        .attr("fill", "#fff");
-    }
-  }
   /* create zoom & apply it to according svg elements */
   createZoom(simulation, { scale = [0.3, 8] } = {}) {
     const self = this;
@@ -146,9 +153,9 @@ class ForceGraph {
       if (!event.active) {
         simulation
           .alphaTarget(
-            +self.defaltConfig.alphaTarget + 0.3 > 1
+            +self.defaltForceConfig.alphaTarget + 0.3 > 1
               ? 1
-              : +self.defaltConfig.alphaTarget + 0.3
+              : +self.defaltForceConfig.alphaTarget + 0.3
           )
           .restart();
       }
@@ -163,7 +170,7 @@ class ForceGraph {
     };
     const dragended = function (event) {
       if (!event.active) {
-        simulation.alphaTarget(self.defaltConfig.alphaTarget);
+        simulation.alphaTarget(self.defaltForceConfig.alphaTarget);
       }
 
       if (event.subject.pinned) {
@@ -181,16 +188,13 @@ class ForceGraph {
       .subject(function () {
         return d3.select(this.parentNode).datum();
       })
-
       .on("start", dragstarted)
       .on("drag", dragged)
       .on("end", dragended);
     // apply drag to svg elements
-    nodeTopG
-      .selectChildren("g")
-      .filter((d) => d.id !== 0)
-      .selectChildren(".base-circle")
-      .call(dragDefine);
+    const targetNodeGs = nodeTopG.selectChildren("g").filter((d) => d.id !== 0);
+    targetNodeGs.selectChildren(".base-circle").call(dragDefine);
+    targetNodeGs.selectChildren(".vl-container").call(dragDefine);
   }
 
   /* create force simulation
@@ -254,15 +258,27 @@ class ForceGraph {
   }
 
   /* 'refresh' DOM by new data*/
-  updateDomByData({
-    circleR = 10,
-    circleFill = "#aaa",
-    borderFill = "#fff",
-    borderStroke = "#ccc",
-    borderWidth = 1.5,
-    durationTime = this.durationTime,
-    rIncrease = this.defaltConfig.rIncrease,
-  } = {}) {
+  updateDomByData(
+    {
+      // base circle
+      circleR,
+      circleFill,
+      // vl border
+      borderFill,
+      borderStroke,
+      borderWidth,
+      // vl icon
+      vlIconSize,
+      vlIconGap,
+      vlIconColor,
+      // other
+      durationTime,
+      // bg circle
+      bgCircleStroke,
+      bgCircleWidth,
+      rIncrease,
+    } = this.defaltDomConfig
+  ) {
     const self = this;
     const nodeData = this.nodeData;
     const linkData = this.linkData;
@@ -282,8 +298,8 @@ class ForceGraph {
             .attr("r", (d) => d * rIncrease)
             .attr("cx", this.containerViewWidth / 2)
             .attr("cy", this.containerViewHeight / 2)
-            .attr("stroke", "#aaa")
-            .attr("stroke-width", 2.5)
+            .attr("stroke", bgCircleStroke)
+            .attr("stroke-width", bgCircleWidth)
             .attr("fill", "none");
 
           bgCircles
@@ -329,9 +345,9 @@ class ForceGraph {
                 data.showVL = false;
                 // switch display btw circle and vega-lite
                 topG.selectChild(".base-circle").attr("display", "none");
-                topG.selectChild(".vegalite-container").attr("display", null);
+                topG.selectChild(".vl-container").attr("display", null);
                 // draw vega-lite graph
-                self.drawVegaLite(topG);
+                self.drawVl(topG);
               }
             });
 
@@ -339,7 +355,7 @@ class ForceGraph {
           // g as vega-lite container
           const vegeLiteContainers = nodeGs
             .append("g")
-            .attr("class", "vegalite-container")
+            .attr("class", "vl-container")
             .attr("display", function () {
               const data = d3.select(this.parentNode).datum();
               return !data.showVL ? "none" : null;
@@ -350,16 +366,42 @@ class ForceGraph {
             .attr("class", "border")
             .attr("fill", borderFill)
             .attr("stroke", borderStroke)
-            .attr("stroke-width", borderWidth)
-            .attr("pointer-events", "none");
+            .attr("stroke-width", borderWidth);
+
           // rect as headers
           const headers = vegeLiteContainers
             .append("g")
             .attr("class", "header");
+          // add vl icons
 
-          const vegaLiteBoxes = vegeLiteContainers
+          headers
+            .append("use")
+            .attr("href", "#close")
+            .attr("class", ".icon-close")
+            .attr("cursor", "pointer")
+            .attr("width", vlIconSize)
+            .attr("height", vlIconSize)
+            .attr("fill", vlIconColor)
+            .style(
+              "transform",
+              `translate(${-vlIconSize - vlIconGap}px, ${0})`
+            );
+          headers
+            .append("use")
+            .attr("href", "#question")
+            .attr("class", ".icon-close")
+            .attr("cursor", "pointer")
+            .attr("width", vlIconSize)
+            .attr("height", vlIconSize)
+            .attr("fill", vlIconColor)
+            .style(
+              "transform",
+              `translate(${-(vlIconSize + vlIconGap) * 2}px, ${0})`
+            );
+
+          const vlBoxes = vegeLiteContainers
             .append("g")
-            .attr("class", "vegalite-box");
+            .attr("class", "vl-box");
 
           // add animation
           nodeGs
@@ -417,21 +459,23 @@ class ForceGraph {
   }
 
   /* show vega-lite graph within topG */
-  drawVegaLite(
+  drawVl(
     topG,
     {
       durationTime = this.durationTime,
-      vegaLiteWidth = 100,
-      vegaLiteHeight = 150,
+      vlWidth = 125,
+      vlHeight = 125,
       borderWidthOffset = 3,
       borderHeightOffset = 8,
       borderCornerR = 10,
+      vlIconSize = this.defaltDomConfig.vlIconSize,
+      vlIconGap = this.defaltDomConfig.vlIconGap,
     } = {}
   ) {
-    let configData = topG.datum().vegaLiteConfig;
+    let configData = topG.datum().vlConfig;
 
-    const vegaLiteContainer = topG.selectChild(".vegalite-container");
-    const vegaLiteBox = vegaLiteContainer.selectChild(".vegalite-box");
+    const vlContainer = topG.selectChild(".vl-container");
+    const vlBox = vlContainer.selectChild(".vl-box");
     if (configData) {
     } else {
       // create new config data
@@ -441,33 +485,31 @@ class ForceGraph {
         img: null,
       };
       const data = topG.datum();
-      data.vegaLiteConfig = configData;
+      data.vlConfig = configData;
       // create new vega-lite svg
       const vlSpec = JSON.parse(data["vega-lite"]);
       // add options
-      vlSpec["width"] = vegaLiteWidth;
-      vlSpec["height"] = vegaLiteHeight;
+      vlSpec["width"] = vlWidth;
+      vlSpec["height"] = vlHeight;
       vlSpec["usermeta"] = { embedOptions: { renderer: "svg" } };
       // generate vega-lite svg
-      vegaEmbed(vegaLiteBox.node(), vlSpec).then((result) => {
+      vegaEmbed(vlBox.node(), vlSpec).then((result) => {
         // get view data
         const view = result.view.background("transparent");
         configData.view = view;
         // get svg element, and reposition it
-        const vegaLiteSvg = vegaLiteBox
-          .select("svg")
-          .attr("class", "svg-graph");
-        vegaLiteBox.style(
+        const vlSvg = vlBox.select("svg").attr("class", "svg-graph");
+        vlBox.style(
           "transform",
           `translate(${borderWidthOffset}px, ${borderHeightOffset}px)`
         );
         // remove unrelated generated components
-        vegaLiteBox.node().appendChild(vegaLiteSvg.node());
-        vegaLiteBox.selectChild("div").remove();
-        vegaLiteBox.selectChild("details").remove();
+        vlBox.node().appendChild(vlSvg.node());
+        vlBox.selectChild("div").remove();
+        vlBox.selectChild("details").remove();
         // get w&h of svg
-        const graphWidth = vegaLiteSvg.attr("width");
-        const graphHeight = vegaLiteSvg.attr("height");
+        const graphWidth = vlSvg.attr("width");
+        const graphHeight = vlSvg.attr("height");
         // set img config
         configData.img = {
           width: graphWidth,
@@ -486,23 +528,29 @@ class ForceGraph {
         };
 
         // set position of whole vega-lite graph
-        vegaLiteContainer.style(
+        vlContainer.style(
           "transform",
           `translate(${-borderWidth / 2}px, ${-borderHeight / 2}px)`
         );
+        // set position of header(icons)
+        vlContainer
+          .selectChild(".header")
+          .style(
+            "transform",
+            `translate(${borderWidth}px,${-vlIconSize - vlIconGap}px)`
+          );
         // set position of other components & add animation
-        vegaLiteContainer
+        vlContainer
           .selectChild(".border")
           .attr("rx", borderCornerR)
           .attr("width", 0)
           .attr("height", 0)
           .transition()
           .duration(durationTime)
-
           .attr("width", borderWidth)
           .attr("height", borderHeight);
-        // add animation of svg
-        vegaLiteSvg
+        // add animation of whole vl graph
+        vlContainer
           .attr("fill-opacity", 0)
           .attr("stroke-opacity", 0)
           .transition()
