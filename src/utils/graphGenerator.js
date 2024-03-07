@@ -15,6 +15,7 @@ class ForceGraph {
     this.linkData = linkData.map((d) => ({
       ...d,
     }));
+    // set attr of svg container
     this.svgContainer = this.setSvgContainer(containerId);
     // create id map for nodes & links data
     this.nodeIdMap = new Map();
@@ -25,6 +26,8 @@ class ForceGraph {
     this.linkData.forEach((link) => {
       this.linkIdMap.set(`${link.source}_${link.target}`, link);
     });
+    // set initial value of max_layer
+    this.maxLayer = d3.max(this.nodeData, (d) => d.layer);
     // other defalt configs
     this.defaltConfig = {
       alpha: 1,
@@ -61,7 +64,7 @@ class ForceGraph {
 
   /* draw force graph within a svg_container */
   createForceGraph(options = {}) {
-    this.drawBackground();
+    // this.drawBackground();
     const svgContainer = this.svgContainer;
     // freeze the 'zero' node
     const zeroData = this.nodeIdMap.get(0);
@@ -69,7 +72,8 @@ class ForceGraph {
     zeroData.fy = this.containerViewHeight / 2;
     // processing
     const config = { ...this.defaltConfig, ...options };
-    // create 2 top elements
+    // create 3 top elements
+    const backgroundG = svgContainer.append("g").attr("class", "topg-bg");
     const linkTopG = svgContainer.append("g").attr("class", "topg-link");
     const nodeTopG = svgContainer.append("g").attr("class", "topg-node");
     this.updateDomByData();
@@ -110,7 +114,7 @@ class ForceGraph {
     for (let i = 4; i > 0; i--) {
       backgroundG
         .append("circle")
-        .attr("r", i * rIncrease)
+        .attr("r", (d) => d * rIncrease)
         .attr("cx", this.containerViewWidth / 2)
         .attr("cy", this.containerViewHeight / 2)
         .attr("stroke", "#aaa")
@@ -257,6 +261,7 @@ class ForceGraph {
     borderStroke = "#ccc",
     borderWidth = 1.5,
     durationTime = this.durationTime,
+    rIncrease = this.defaltConfig.rIncrease,
   } = {}) {
     const self = this;
     const nodeData = this.nodeData;
@@ -264,6 +269,39 @@ class ForceGraph {
     const svgContainer = this.svgContainer;
     const nodeTopG = svgContainer.selectChild(".topg-node");
     const linkTopG = svgContainer.selectChild(".topg-link");
+    const bgTopG = svgContainer.selectChild(".topg-bg");
+
+    bgTopG
+      .selectAll("circle")
+      .data(d3.range(1, this.maxLayer + 1))
+      .join(
+        (enter) => {
+          const bgCircles = enter
+            .append("circle")
+            .attr("class", "bg-circle")
+            .attr("r", (d) => d * rIncrease)
+            .attr("cx", this.containerViewWidth / 2)
+            .attr("cy", this.containerViewHeight / 2)
+            .attr("stroke", "#aaa")
+            .attr("stroke-width", 2.5)
+            .attr("fill", "none");
+
+          bgCircles
+            .style("opacity", 0)
+            .transition()
+            .duration(durationTime)
+            .style("opacity", 0.3);
+        },
+        (update) => update,
+        (exit) => {
+          exit
+            .style("opacity", 0.3)
+            .transition()
+            .duration(durationTime)
+            .style("opacity", 0)
+            .remove();
+        }
+      );
     nodeTopG
       .selectAll("g")
       .data(nodeData, (d) => d.id)
@@ -275,7 +313,7 @@ class ForceGraph {
             .append("circle")
             .attr("class", "base-circle")
             .attr("cursor", "pointer")
-            .style("transition", "transform 0.2s")
+            .style("transition", `transform ${durationTime}ms`)
             .attr("r", (d) => (d.id === 0 ? circleR * 1.5 : circleR))
             .attr("fill", (d) => (d.id === 0 ? "red" : circleFill))
             .attr("display", function () {
@@ -325,18 +363,18 @@ class ForceGraph {
 
           // add animation
           nodeGs
-            .attr("opacity", 0)
+            .style("opacity", 0)
             .transition()
             .duration(durationTime)
-            .attr("opacity", 1);
+            .style("opacity", 1);
         },
         (update) => update,
         (exit) => {
           exit
-            .attr("opacity", 1)
+            .style("opacity", 1)
             .transition()
             .duration(durationTime)
-            .attr("opacity", 0)
+            .style("opacity", 0)
             .remove();
         }
       );
@@ -361,18 +399,18 @@ class ForceGraph {
 
           // add animation
           linkGs
-            .attr("opacity", 0)
+            .style("opacity", 0)
             .transition()
             .duration(durationTime)
-            .attr("opacity", 1);
+            .style("opacity", 1);
         },
         (update) => update,
         (exit) => {
           exit
-            .attr("opacity", 1)
+            .style("opacity", 1)
             .transition()
             .duration(durationTime)
-            .attr("opacity", 0)
+            .style("opacity", 0)
             .remove();
         }
       );
