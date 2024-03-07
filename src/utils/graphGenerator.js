@@ -56,6 +56,7 @@ class ForceGraph {
       borderFill: "#fff",
       borderStroke: "#ccc",
       borderWidth: 1.5,
+      borderCornerR: 10,
       // vl icon
       vlIconSize: 15,
       vlIconGap: 2,
@@ -267,6 +268,7 @@ class ForceGraph {
       borderFill,
       borderStroke,
       borderWidth,
+      borderCornerR,
       // vl icon
       vlIconSize,
       vlIconGap,
@@ -300,22 +302,14 @@ class ForceGraph {
             .attr("cy", this.containerViewHeight / 2)
             .attr("stroke", bgCircleStroke)
             .attr("stroke-width", bgCircleWidth)
-            .attr("fill", "none");
+            .attr("fill", "none")
+            .style("opacity", 0);
 
-          bgCircles
-            .style("opacity", 0)
-            .transition()
-            .duration(durationTime)
-            .style("opacity", 0.3);
+          this.fadeInTransition(bgCircles, 0.3);
         },
         (update) => update,
         (exit) => {
-          exit
-            .style("opacity", 0.3)
-            .transition()
-            .duration(durationTime)
-            .style("opacity", 0)
-            .remove();
+          this.fadeOutTransition(exit);
         }
       );
     nodeTopG
@@ -329,7 +323,6 @@ class ForceGraph {
             .append("circle")
             .attr("class", "base-circle")
             .attr("cursor", "pointer")
-            .style("transition", `transform ${durationTime}ms`)
             .attr("r", (d) => (d.id === 0 ? circleR * 1.5 : circleR))
             .attr("fill", (d) => (d.id === 0 ? "red" : circleFill))
             .attr("display", function () {
@@ -345,9 +338,25 @@ class ForceGraph {
                 data.showVL = false;
                 // switch display btw circle and vega-lite
                 topG.selectChild(".base-circle").attr("display", "none");
-                topG.selectChild(".vl-container").attr("display", null);
-                // draw vega-lite graph
-                self.drawVl(topG);
+                // reset attr, prepare for animation
+                const vlContainer = topG.selectChild(".vl-container");
+                vlContainer.attr("opacity", 0).attr("display", null);
+                vlContainer
+                  .selectChild(".border")
+                  .attr("width", 0)
+                  .attr("height", 0);
+
+                // if don't have config, draw vega-lite graph
+                if (!data.vlConfig) {
+                  self.drawVl(topG);
+                } else {
+                  // add fade-in animation
+                  self.vlInTransition(
+                    vlContainer,
+                    data.vlConfig.border.width,
+                    data.vlConfig.border.height
+                  );
+                }
               }
             });
 
@@ -356,6 +365,7 @@ class ForceGraph {
           const vegeLiteContainers = nodeGs
             .append("g")
             .attr("class", "vl-container")
+
             .attr("display", function () {
               const data = d3.select(this.parentNode).datum();
               return !data.showVL ? "none" : null;
@@ -366,7 +376,8 @@ class ForceGraph {
             .attr("class", "border")
             .attr("fill", borderFill)
             .attr("stroke", borderStroke)
-            .attr("stroke-width", borderWidth);
+            .attr("stroke-width", borderWidth)
+            .attr("rx", borderCornerR);
 
           // rect as headers
           const headers = vegeLiteContainers
@@ -382,10 +393,20 @@ class ForceGraph {
             .attr("width", vlIconSize)
             .attr("height", vlIconSize)
             .attr("fill", vlIconColor)
-            .style(
-              "transform",
-              `translate(${-vlIconSize - vlIconGap}px, ${0})`
-            );
+            .style("transform", `translate(${-vlIconSize - vlIconGap}px, ${0})`)
+            .on("click", function () {
+              const topG = d3.select(this.parentNode.parentNode.parentNode);
+              const vlContainer = topG.selectChild(".vl-container");
+              const baseCirlce = topG.selectChild(".base-circle");
+              const vlConfig = topG.datum().vlConfig;
+              // add animation of vl graph
+              self.vlOutTransition(
+                vlContainer,
+                vlConfig.border.width,
+                vlConfig.border.height
+              );
+              baseCirlce.attr("display", null);
+            });
           headers
             .append("use")
             .attr("href", "#question")
@@ -404,20 +425,11 @@ class ForceGraph {
             .attr("class", "vl-box");
 
           // add animation
-          nodeGs
-            .style("opacity", 0)
-            .transition()
-            .duration(durationTime)
-            .style("opacity", 1);
+          this.fadeInTransition(nodeGs);
         },
         (update) => update,
         (exit) => {
-          exit
-            .style("opacity", 1)
-            .transition()
-            .duration(durationTime)
-            .style("opacity", 0)
-            .remove();
+          this.fadeOutTransition(exit);
         }
       );
     linkTopG
@@ -440,20 +452,11 @@ class ForceGraph {
             .attr("stroke-width", 1);
 
           // add animation
-          linkGs
-            .style("opacity", 0)
-            .transition()
-            .duration(durationTime)
-            .style("opacity", 1);
+          this.fadeInTransition(linkGs);
         },
         (update) => update,
         (exit) => {
-          exit
-            .style("opacity", 1)
-            .transition()
-            .duration(durationTime)
-            .style("opacity", 0)
-            .remove();
+          this.fadeOutTransition(exit);
         }
       );
   }
@@ -467,98 +470,142 @@ class ForceGraph {
       vlHeight = 125,
       borderWidthOffset = 3,
       borderHeightOffset = 8,
-      borderCornerR = 10,
+
       vlIconSize = this.defaltDomConfig.vlIconSize,
       vlIconGap = this.defaltDomConfig.vlIconGap,
     } = {}
   ) {
-    let configData = topG.datum().vlConfig;
-
     const vlContainer = topG.selectChild(".vl-container");
     const vlBox = vlContainer.selectChild(".vl-box");
-    if (configData) {
-    } else {
-      // create new config data
-      configData = {
-        view: null,
-        border: null,
-        img: null,
-      };
-      const data = topG.datum();
-      data.vlConfig = configData;
-      // create new vega-lite svg
-      const vlSpec = JSON.parse(data["vega-lite"]);
-      // add options
-      vlSpec["width"] = vlWidth;
-      vlSpec["height"] = vlHeight;
-      vlSpec["usermeta"] = { embedOptions: { renderer: "svg" } };
-      // generate vega-lite svg
-      vegaEmbed(vlBox.node(), vlSpec).then((result) => {
-        // get view data
-        const view = result.view.background("transparent");
-        configData.view = view;
-        // get svg element, and reposition it
-        const vlSvg = vlBox.select("svg").attr("class", "svg-graph");
-        vlBox.style(
-          "transform",
-          `translate(${borderWidthOffset}px, ${borderHeightOffset}px)`
-        );
-        // remove unrelated generated components
-        vlBox.node().appendChild(vlSvg.node());
-        vlBox.selectChild("div").remove();
-        vlBox.selectChild("details").remove();
-        // get w&h of svg
-        const graphWidth = vlSvg.attr("width");
-        const graphHeight = vlSvg.attr("height");
-        // set img config
-        configData.img = {
-          width: graphWidth,
-          height: graphHeight,
-        };
-        // compute position/shape data of components
-        const borderWidth = +graphWidth + borderWidthOffset * 2;
-        const borderHeight = +graphHeight + borderHeightOffset * 2;
-        const translateX = borderWidth / 2;
-        const translateY = borderHeight / 2;
-        // set border config
-        configData.border = {
-          r: Math.sqrt(Math.pow(translateX, 2) + Math.pow(translateY, 2)),
-          width: borderWidth,
-          height: borderHeight,
-        };
 
-        // set position of whole vega-lite graph
-        vlContainer.style(
+    // create new config data
+    let configData = {
+      view: null,
+      border: null,
+      img: null,
+    };
+    const data = topG.datum();
+    data.vlConfig = configData;
+    // create new vega-lite svg
+    const vlSpec = JSON.parse(data["vega-lite"]);
+    // add options
+    vlSpec["width"] = vlWidth;
+    vlSpec["height"] = vlHeight;
+    vlSpec["usermeta"] = { embedOptions: { renderer: "svg" } };
+    // generate vega-lite svg
+    vegaEmbed(vlBox.node(), vlSpec).then((result) => {
+      // get view data
+      const view = result.view.background("transparent");
+      configData.view = view;
+      // get svg element, and reposition it
+      const vlSvg = vlBox.select("svg").attr("class", "svg-graph");
+      vlBox.style(
+        "transform",
+        `translate(${borderWidthOffset}px, ${borderHeightOffset}px)`
+      );
+      // remove unrelated generated components
+      vlBox.node().appendChild(vlSvg.node());
+      vlBox.selectChild("div").remove();
+      vlBox.selectChild("details").remove();
+      // get w&h of svg
+      const graphWidth = vlSvg.attr("width");
+      const graphHeight = vlSvg.attr("height");
+      // set img config
+      configData.img = {
+        width: graphWidth,
+        height: graphHeight,
+      };
+      // compute position/shape data of components
+      const borderWidth = +graphWidth + borderWidthOffset * 2;
+      const borderHeight = +graphHeight + borderHeightOffset * 2;
+      const translateX = borderWidth / 2;
+      const translateY = borderHeight / 2;
+      // set border config
+      configData.border = {
+        r: Math.sqrt(Math.pow(translateX, 2) + Math.pow(translateY, 2)),
+        width: borderWidth,
+        height: borderHeight,
+      };
+
+      // set position of whole vega-lite graph
+      vlContainer.style(
+        "transform",
+        `translate(${-borderWidth / 2}px, ${-borderHeight / 2}px)`
+      );
+      // set position of header(icons)
+      vlContainer
+        .selectChild(".header")
+        .style(
           "transform",
-          `translate(${-borderWidth / 2}px, ${-borderHeight / 2}px)`
+          `translate(${borderWidth}px,${-vlIconSize - vlIconGap}px)`
         );
-        // set position of header(icons)
-        vlContainer
-          .selectChild(".header")
-          .style(
-            "transform",
-            `translate(${borderWidth}px,${-vlIconSize - vlIconGap}px)`
-          );
-        // set position of other components & add animation
-        vlContainer
-          .selectChild(".border")
-          .attr("rx", borderCornerR)
-          .attr("width", 0)
-          .attr("height", 0)
-          .transition()
-          .duration(durationTime)
-          .attr("width", borderWidth)
-          .attr("height", borderHeight);
-        // add animation of whole vl graph
-        vlContainer
-          .attr("fill-opacity", 0)
-          .attr("stroke-opacity", 0)
-          .transition()
-          .duration(durationTime + 25)
-          .attr("fill-opacity", 1)
-          .attr("stroke-opacity", 1);
+      // add animation
+      this.vlInTransition(vlContainer, borderWidth, borderHeight);
+    });
+  }
+
+  // specific transition for vega-lite graph - in
+  vlInTransition(vlContainer, width, height, duration = this.durationTime) {
+    vlContainer
+      .selectChild(".border")
+      .attr("x", width / 2)
+      .attr("y", height / 2)
+      .transition()
+      .duration(duration)
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", width)
+      .attr("height", height);
+
+    vlContainer
+      .transition()
+      .duration(duration + 100)
+      .attr("opacity", 1);
+  }
+  // specific transition for vega-lite graph - out
+  vlOutTransition(vlContainer, width, height, duration = this.durationTime) {
+    vlContainer
+      .selectChild(".border")
+      .transition()
+      .duration(duration + 150)
+      .attr("x", width / 2)
+      .attr("y", height / 2)
+      .attr("width", 0)
+      .attr("height", 0);
+
+    vlContainer
+      .transition()
+      .duration(duration)
+      .attr("opacity", 0)
+      .on("end", function () {
+        vlContainer.attr("display", "none");
       });
-    }
+  }
+
+  // apply fade-in transition to a selection
+  fadeInTransition(selection, opacity = 1, duration = this.durationTime) {
+    selection.transition().duration(duration).style("opacity", opacity);
+  }
+  /* apply fade-out transition to a selection
+   * endAction: 'remove' / 'hide'
+   */
+  fadeOutTransition(
+    selection,
+    endAction = "remove",
+    opacity = 0,
+    duration = this.durationTime
+  ) {
+    selection
+      .transition()
+      .duration(duration)
+      .style("opacity", 0)
+      .on("end", function () {
+        if (endAction === "remove") {
+          d3.select(this).remove();
+        } else if (endAction === "hide") {
+          d3.select(this).style("display", "none");
+        }
+      });
   }
 }
 
