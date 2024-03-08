@@ -303,7 +303,7 @@ class ForceGraph {
             .attr("stroke", bgCircleStroke)
             .attr("stroke-width", bgCircleWidth)
             .attr("fill", "none")
-            .style("opacity", 0);
+            .attr("opacity", 0);
 
           this.fadeInTransition(bgCircles, 0.3);
         },
@@ -337,8 +337,9 @@ class ForceGraph {
                 // change data
                 data.showVL = false;
                 // switch display btw circle and vega-lite
-                topG.selectChild(".base-circle").attr("display", "none");
-                // reset attr, prepare for animation
+                const baseCirlce = topG.selectChild(".base-circle");
+                self.fadeOutTransition(baseCirlce, "hide");
+                // reset attr of vl-container, prepare for animation
                 const vlContainer = topG.selectChild(".vl-container");
                 vlContainer.attr("opacity", 0).attr("display", null);
                 vlContainer
@@ -405,7 +406,10 @@ class ForceGraph {
                 vlConfig.border.width,
                 vlConfig.border.height
               );
-              baseCirlce.attr("display", null);
+              // prepare base-cirle for fade-in animation
+              baseCirlce.attr("display", null).attr("opacity", 0);
+              // add animation of base-circle
+              self.fadeInTransition(baseCirlce, 1, self.durationTime + 100);
             });
           headers
             .append("use")
@@ -470,7 +474,6 @@ class ForceGraph {
       vlHeight = 125,
       borderWidthOffset = 3,
       borderHeightOffset = 8,
-
       vlIconSize = this.defaltDomConfig.vlIconSize,
       vlIconGap = this.defaltDomConfig.vlIconGap,
     } = {}
@@ -584,7 +587,7 @@ class ForceGraph {
 
   // apply fade-in transition to a selection
   fadeInTransition(selection, opacity = 1, duration = this.durationTime) {
-    selection.transition().duration(duration).style("opacity", opacity);
+    selection.transition().duration(duration).attr("opacity", opacity);
   }
   /* apply fade-out transition to a selection
    * endAction: 'remove' / 'hide'
@@ -598,12 +601,12 @@ class ForceGraph {
     selection
       .transition()
       .duration(duration)
-      .style("opacity", 0)
+      .attr("opacity", 0)
       .on("end", function () {
         if (endAction === "remove") {
           d3.select(this).remove();
         } else if (endAction === "hide") {
-          d3.select(this).style("display", "none");
+          d3.select(this).attr("display", "none");
         }
       });
   }
