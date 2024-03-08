@@ -5,6 +5,7 @@ class ForceGraph {
     // viewbox of container svg
     this.containerViewWidth = 1920;
     this.containerViewHeight = 1080;
+    this.simulation = null;
     // node & link data for controling force graph
     // add config variables into origin data
     this.nodeData = nodeData.map((d) => ({
@@ -46,11 +47,11 @@ class ForceGraph {
       chargeStrength: -250,
       radialStrength: 1,
       nodeR: 10,
-      rIncrease: 250,
+      baseRadius: 250,
     };
     this.defaltDomConfig = {
       // base circle
-      circleR: 10,
+      circleR: this.defaltForceConfig.nodeR,
       circleFill: "#aaa",
       // vl border
       borderFill: "#fff",
@@ -66,7 +67,6 @@ class ForceGraph {
       // bg circle
       bgCircleStroke: "#aaa",
       bgCircleWidth: 2.5,
-      rIncrease: this.defaltForceConfig.rIncrease,
     };
   }
 
@@ -84,13 +84,13 @@ class ForceGraph {
 
   /* draw force graph within a svg_container */
   createForceGraph(options = {}) {
-    // this.drawBackground();
+    const self = this;
     const svgContainer = this.svgContainer;
     // freeze the 'zero' node
     const zeroData = this.nodeIdMap.get(0);
     zeroData.fx = this.containerViewWidth / 2;
     zeroData.fy = this.containerViewHeight / 2;
-    // processing
+    // processing ...
     const config = { ...this.defaltForceConfig, ...options };
     // create 3 top elements
     const bgTopG = svgContainer.append("g").attr("class", "topg-bg");
@@ -98,11 +98,26 @@ class ForceGraph {
     const nodeTopG = svgContainer.append("g").attr("class", "topg-node");
     // update dom by node & link data
     this.updateDomByData();
-
+    // create force
     const tick = function () {
       const nodeGs = nodeTopG.selectChildren("g");
       const linkGs = linkTopG.selectChildren("g");
 
+      // force position of nodes to be on circle
+      const centerX = self.defaltForceConfig.centerX;
+      const centerY = self.defaltForceConfig.centerY;
+      nodeGs.each(function (d) {
+        if (d.id != 0) {
+          let dx = d.x - centerX;
+          let dy = d.y - centerY;
+          const disToCenter = Math.sqrt(dx * dx + dy * dy);
+          const targetDis = self.getLayerR(d.layer);
+          const ratio = targetDis / disToCenter;
+          d.x = centerX + dx * ratio;
+          d.y = centerY + dy * ratio;
+        }
+      });
+      // apply position to dom
       linkGs
         .selectChildren(".base-line")
         .attr("x1", function () {
@@ -125,9 +140,10 @@ class ForceGraph {
       nodeGs.style("transform", (d) => `translate(${d.x}px,${d.y}px)`);
     };
 
-    const simulation = this.createSimulation(tick, config);
-    this.createDrag(simulation, nodeTopG);
-    this.createZoom(simulation);
+    this.simulation = this.createSimulation(tick, config);
+    // create drag & zoom
+    this.createDrag(this.simulation, nodeTopG);
+    this.createZoom(this.simulation);
   }
 
   /* create zoom & apply it to according svg elements */
@@ -198,6 +214,20 @@ class ForceGraph {
     targetNodeGs.selectChildren(".vl-container").call(dragDefine);
   }
 
+  // compute R of certain layer
+  getLayerR(
+    layer,
+    { baseRadius = this.defaltForceConfig.baseRadius, a = 1000 } = {}
+  ) {
+    return baseRadius * layer;
+    // return baseRadius + a * Math.log(layer + 1);
+  }
+
+  // refresh force parameter
+  refreshSimulation() {
+    this.simulation.nodes(this.nodeData);
+    this.simulation.alpha(0.8).restart();
+  }
   /* create force simulation
    * return simulation */
   createSimulation(
@@ -218,36 +248,69 @@ class ForceGraph {
       chargeStrength,
       radialStrength,
       nodeR,
-      rIncrease,
     } = {}
   ) {
     const nodeData = this.nodeData;
     const linkData = this.linkData;
     const simulation = d3
       .forceSimulation(nodeData)
-      .force("charge", d3.forceManyBody().strength(chargeStrength))
       .force(
         "center",
         d3.forceCenter(centerX, centerY).strength(centerStrength)
       )
+      // .force("x", d3.forceX().x(positionX).strength(positionStrength))
+      // .force("y", d3.forceY().y(positionY).strength(positionStrength))
       .force(
         "radial",
         d3
           .forceRadial()
-          .radius((d) => d.layer * rIncrease)
+          .radius((d) => this.getLayerR(d.layer))
           .x(centerX)
           .y(centerY)
           .strength(radialStrength)
       )
-      //   .force("x", d3.forceX().x(positionX).strength(positionStrength))
-      //   .force("y", d3.forceY().y(positionY).strength(positionStrength))
-      .force("collide", d3.forceCollide(nodeR).strength(collideStrength))
+      .force(
+        "charge",
+        d3.forceManyBody().strength((d) => {
+          if (d.showVL) {
+            return chargeStrength;
+          } else {
+            return chargeStrength;
+          }
+        })
+      )
+      .force(
+        "collide",
+        d3
+          .forceCollide((d) => {
+            if (d.showVL) {
+              return d.vlConfig.border.r;
+            } else {
+              return nodeR;
+            }
+          })
+          .strength(collideStrength)
+      )
       .force(
         "link",
         d3
           .forceLink(linkData)
           .id((d) => d.id)
-          .distance(rIncrease)
+          .distance((d) => {
+            const sourceNode = d.source;
+            const targetNode = d.target;
+            let distance =
+              this.getLayerR(targetNode.layer) -
+              this.getLayerR(sourceNode.layer);
+            // if (sourceNode.showVL) {
+            //   distance += 10;
+            // }
+            // if (targetNode.showVL) {
+            //   distance += 10;
+            // }
+            // console.log(sourceNode.id, targetNode.id, distance);
+            return distance;
+          })
       )
       .alpha(alpha)
       .alphaMin(alphaMin)
@@ -278,7 +341,6 @@ class ForceGraph {
       // bg circle
       bgCircleStroke,
       bgCircleWidth,
-      rIncrease,
     } = this.defaltDomConfig
   ) {
     const self = this;
@@ -297,7 +359,7 @@ class ForceGraph {
           const bgCircles = enter
             .append("circle")
             .attr("class", "bg-circle")
-            .attr("r", (d) => d * rIncrease)
+            .attr("r", (d) => this.getLayerR(d))
             .attr("cx", this.containerViewWidth / 2)
             .attr("cy", this.containerViewHeight / 2)
             .attr("stroke", bgCircleStroke)
@@ -335,7 +397,7 @@ class ForceGraph {
               const data = topG.datum();
               if (data.id !== 0) {
                 // change data
-                data.showVL = false;
+                data.showVL = true;
                 // switch display btw circle and vega-lite
                 const baseCirlce = topG.selectChild(".base-circle");
                 self.fadeOutTransition(baseCirlce, "hide");
@@ -346,7 +408,6 @@ class ForceGraph {
                   .selectChild(".border")
                   .attr("width", 0)
                   .attr("height", 0);
-
                 // if don't have config, draw vega-lite graph
                 if (!data.vlConfig) {
                   self.drawVl(topG);
@@ -357,6 +418,7 @@ class ForceGraph {
                     data.vlConfig.border.width,
                     data.vlConfig.border.height
                   );
+                  self.refreshSimulation();
                 }
               }
             });
@@ -397,10 +459,12 @@ class ForceGraph {
             .style("transform", `translate(${-vlIconSize - vlIconGap}px, ${0})`)
             .on("click", function () {
               const topG = d3.select(this.parentNode.parentNode.parentNode);
+              topG.datum().showVL = false;
+              self.refreshSimulation();
+              // add animation of vl graph
               const vlContainer = topG.selectChild(".vl-container");
               const baseCirlce = topG.selectChild(".base-circle");
               const vlConfig = topG.datum().vlConfig;
-              // add animation of vl graph
               self.vlOutTransition(
                 vlContainer,
                 vlConfig.border.width,
@@ -542,8 +606,10 @@ class ForceGraph {
           "transform",
           `translate(${borderWidth}px,${-vlIconSize - vlIconGap}px)`
         );
+
       // add animation
       this.vlInTransition(vlContainer, borderWidth, borderHeight);
+      this.refreshSimulation();
     });
   }
 
