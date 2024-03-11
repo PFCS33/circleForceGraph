@@ -1,4 +1,4 @@
-import vegaEmbed, { vega } from "vega-embed";
+import vegaEmbed from "vega-embed";
 /* generate a force svg graph */
 class ForceGraph {
   constructor(containerId, nodeData, linkData) {
@@ -45,9 +45,9 @@ class ForceGraph {
       centerStrength: 1,
       positionX: this.containerViewWidth / 2,
       positionY: this.containerViewHeight / 2,
-      positionStrength: 0.1,
+      positionStrength: -0.1,
       collideStrength: 1,
-      chargeStrength: -100,
+      chargeStrength: -250,
       radialStrength: 1,
       nodeR: 10,
       baseRadius: 250,
@@ -217,20 +217,6 @@ class ForceGraph {
     targetNodeGs.selectChildren(".vl-container").call(dragDefine);
   }
 
-  // compute R of certain layer
-  getLayerR(
-    layer,
-    { baseRadius = this.defaltForceConfig.baseRadius, a = 1000 } = {}
-  ) {
-    return baseRadius * layer;
-    // return baseRadius + a * Math.log(layer + 1);
-  }
-
-  // refresh force parameter
-  refreshSimulation() {
-    this.simulation.nodes(this.nodeData);
-    this.simulation.alpha(0.8).restart();
-  }
   /* create force simulation
    * return simulation */
   createSimulation(
@@ -257,10 +243,11 @@ class ForceGraph {
     const linkData = this.linkData;
     const simulation = d3
       .forceSimulation(nodeData)
-      .force(
-        "center",
-        d3.forceCenter(centerX, centerY).strength(centerStrength)
-      )
+      // do not need these 3 kinds of forces, cause strange behaviour
+      // .force(
+      //   "center",
+      //   d3.forceCenter(centerX, centerY).strength(centerStrength)
+      // )
       // .force("x", d3.forceX().x(positionX).strength(positionStrength))
       // .force("y", d3.forceY().y(positionY).strength(positionStrength))
       .force(
@@ -275,10 +262,14 @@ class ForceGraph {
       .force(
         "charge",
         d3.forceManyBody().strength((d) => {
-          if (d.showVL) {
+          if (d.id == 0) {
             return chargeStrength;
           } else {
-            return chargeStrength;
+            if (d.showVL) {
+              return chargeStrength * 2;
+            } else {
+              return chargeStrength;
+            }
           }
         })
       )
@@ -312,6 +303,7 @@ class ForceGraph {
             //   distance += 10;
             // }
             // console.log(sourceNode.id, targetNode.id, distance);
+
             return distance;
           })
       )
@@ -436,15 +428,7 @@ class ForceGraph {
             })
             .on("dblclick", function () {
               const data = d3.select(this.parentNode).datum();
-              // change pinned state
-              data.hasPinned = !data.hasPinned;
-              if (data.hasPinned) {
-                data.fx = data.x;
-                data.fy = data.y;
-              } else {
-                data.fx = null;
-                data.fy = null;
-              }
+              self.togglePin(data);
             })
             .on("dblclick.zoom", function (event) {
               event.preventDefault();
@@ -475,12 +459,18 @@ class ForceGraph {
             .style("transform", `translate(${-vlIconSize - vlIconGap}px, ${0})`)
             .on("click", function () {
               const topG = d3.select(this.parentNode.parentNode.parentNode);
-              topG.datum().showVL = false;
+              const data = topG.datum();
+              // reset fixed status of node, if it was fixed
+              if (data.hasPinned) {
+                self.togglePin(data);
+              }
+              // change status data about vl-graph, then refandresh simulation parameters
+              data.showVL = false;
               self.refreshSimulation();
               // add animation of vl graph
               const vlContainer = topG.selectChild(".vl-container");
               const baseCirlce = topG.selectChild(".base-circle");
-              const vlConfig = topG.datum().vlConfig;
+              const vlConfig = data.vlConfig;
               self.vlOutTransition(
                 vlContainer,
                 vlConfig.border.width,
@@ -503,6 +493,25 @@ class ForceGraph {
               "transform",
               `translate(${-(vlIconSize + vlIconGap) * 2}px, ${0})`
             );
+
+          headers
+            .append("use")
+            .attr("href", "#pin")
+            .attr("class", "#icon-pin")
+            .attr("cursor", "pointer")
+            .attr("width", vlIconSize)
+            .attr("height", vlIconSize)
+            .attr("fill", vlIconColor)
+            .style(
+              "transform",
+              `translate(${-(vlIconSize + vlIconGap) * 3}px, ${0})`
+            )
+            .on("click", function () {
+              const data = d3
+                .select(this.parentNode.parentNode.parentNode)
+                .datum();
+              self.togglePin(data);
+            });
 
           const vlBoxes = vegeLiteContainers
             .append("g")
@@ -628,7 +637,38 @@ class ForceGraph {
       this.refreshSimulation();
     });
   }
+  // belows are small utils functions
+  // compute R of certain layer
+  getLayerR(
+    layer,
+    { baseRadius = this.defaltForceConfig.baseRadius, a = 1000 } = {}
+  ) {
+    return baseRadius * layer;
+  }
 
+  // toggle data.hasPinned of one node
+  togglePin(data) {
+    // change pinned state
+    data.hasPinned = !data.hasPinned;
+    // change position status of node data
+    this.resetFixedNode(data);
+  }
+
+  // reset fixed status of node data, base on .hasPinned
+  resetFixedNode(data) {
+    if (data.hasPinned) {
+      data.fx = data.x;
+      data.fy = data.y;
+    } else {
+      data.fx = null;
+      data.fy = null;
+    }
+  }
+  // refresh force parameter
+  refreshSimulation() {
+    this.simulation.nodes(this.nodeData);
+    this.simulation.alpha(0.8).restart();
+  }
   // specific transition for vega-lite graph - in
   vlInTransition(vlContainer, width, height, duration = this.durationTime) {
     vlContainer
