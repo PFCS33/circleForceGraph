@@ -30,6 +30,45 @@
           d="M334.72 612.16L127.36 404.736l85.12-85.184L390.016 391.04l275.968-214.4-72.32-72.32L678.912 19.2l82.944 82.88 0.192-0.128L928 267.84l-0.192 0.256 82.944 82.944-85.12 85.184-72.32-72.256L638.848 640l71.488 177.408-85.12 85.184-207.488-207.36-255.36 255.296-82.944-82.944 255.36-255.36z"
         ></path>
       </symbol>
+      <filter id="inset-shadow" x="-50%" y="-50%" width="200%" height="200%">
+        <feComponentTransfer in="SourceAlpha">
+          <feFuncA type="table" tableValues="1 0"></feFuncA>
+        </feComponentTransfer>
+        <feGaussianBlur stdDeviation="3"></feGaussianBlur>
+        <feOffset dx="5" dy="5" result="offsetblur"></feOffset>
+        <feFlood flood-color="#ccc" result="color"></feFlood>
+        <feComposite in2="offsetblur" operator="in"></feComposite>
+        <feComposite in2="SourceAlpha" operator="in"></feComposite>
+        <feMerge>
+          <feMergeNode in="SourceGraphic"></feMergeNode>
+          <feMergeNode></feMergeNode>
+        </feMerge>
+      </filter>
+      <filter id="hover-shadow">
+        <feOffset in="SourceAlpha" dx="0" dy="0" result="offsetAlpha" />
+        <feMorphology
+          in="offsetAlpha"
+          operator="dilate"
+          radius="2.5"
+          result="morphedAlpha"
+        />
+        <feGaussianBlur in="morphedAlpha" stdDeviation="6" result="blurAlpha" />
+        <feFlood
+          flood-color="#545b77"
+          flood-opacity="0.8"
+          result="floodColor"
+        />
+        <feComposite
+          in="floodColor"
+          in2="blurAlpha"
+          operator="in"
+          result="colorBlur"
+        />
+        <feMerge>
+          <feMergeNode in="colorBlur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
     </defs>
   </svg>
 </template>
@@ -53,9 +92,36 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 #svg-container {
-  width: 80%;
-  height: 80%;
-  border: 2px $secondary-color-dark solid;
+  width: 100%;
+  height: 100%;
+  // border: 2px $secondary-color-dark solid;
   // overflow: visible;
+}
+</style>
+
+<style lang="scss">
+#svg-container {
+  .vl-container {
+    .header {
+      .vl-icon {
+        fill: $icon-color-gray;
+        transition: fill 0.2s ease-out;
+        &:hover {
+          fill: $primary-color;
+        }
+      }
+    }
+    .border {
+      transition: filter 0.2s ease-out;
+    }
+    &.has-pinned {
+      .vl-icon.pin {
+        fill: $primary-color;
+      }
+      .border {
+        filter: url(#inset-shadow);
+      }
+    }
+  }
 }
 </style>

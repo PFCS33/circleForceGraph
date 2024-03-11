@@ -64,7 +64,7 @@ class ForceGraph {
       // vl icon
       vlIconSize: 15,
       vlIconGap: 2,
-      vlIconColor: "#aaa",
+      // vlIconColor: "#aaa",
       // other
       durationTime: this.durationTime,
       // bg circle
@@ -330,7 +330,7 @@ class ForceGraph {
       // vl icon
       vlIconSize,
       vlIconGap,
-      vlIconColor,
+
       // other
       durationTime,
       // bg circle
@@ -380,7 +380,7 @@ class ForceGraph {
             .attr("class", "base-circle")
             .attr("cursor", "pointer")
             .attr("r", (d) => (d.id === 0 ? circleR * 1.5 : circleR))
-            .attr("fill", (d) => (d.id === 0 ? "red" : circleFill))
+            .attr("fill", (d) => (d.id === 0 ? "#f4acb7" : circleFill))
             .attr("display", function () {
               const data = d3.select(this.parentNode).datum();
               return data.showVL ? "none" : null;
@@ -428,7 +428,9 @@ class ForceGraph {
             })
             .on("dblclick", function () {
               const data = d3.select(this.parentNode).datum();
-              self.togglePin(data);
+              const vlContainer = d3.select(this);
+
+              self.togglePin(data, vlContainer);
             })
             .on("dblclick.zoom", function (event) {
               event.preventDefault();
@@ -447,28 +449,27 @@ class ForceGraph {
             .append("g")
             .attr("class", "header");
           // add vl icons
-
           headers
             .append("use")
             .attr("href", "#close")
-            .attr("class", ".icon-close")
+            .attr("class", "vl-icon close")
             .attr("cursor", "pointer")
             .attr("width", vlIconSize)
             .attr("height", vlIconSize)
-            .attr("fill", vlIconColor)
+
             .style("transform", `translate(${-vlIconSize - vlIconGap}px, ${0})`)
             .on("click", function () {
               const topG = d3.select(this.parentNode.parentNode.parentNode);
               const data = topG.datum();
               // reset fixed status of node, if it was fixed
+              const vlContainer = topG.selectChild(".vl-container");
               if (data.hasPinned) {
-                self.togglePin(data);
+                self.togglePin(data, vlContainer);
               }
               // change status data about vl-graph, then refandresh simulation parameters
               data.showVL = false;
               self.refreshSimulation();
               // add animation of vl graph
-              const vlContainer = topG.selectChild(".vl-container");
               const baseCirlce = topG.selectChild(".base-circle");
               const vlConfig = data.vlConfig;
               self.vlOutTransition(
@@ -484,11 +485,11 @@ class ForceGraph {
           headers
             .append("use")
             .attr("href", "#question")
-            .attr("class", ".icon-close")
+            .attr("class", "vl-icon question")
             .attr("cursor", "pointer")
             .attr("width", vlIconSize)
             .attr("height", vlIconSize)
-            .attr("fill", vlIconColor)
+
             .style(
               "transform",
               `translate(${-(vlIconSize + vlIconGap) * 2}px, ${0})`
@@ -497,20 +498,21 @@ class ForceGraph {
           headers
             .append("use")
             .attr("href", "#pin")
-            .attr("class", "#icon-pin")
+            .attr("class", "vl-icon pin")
             .attr("cursor", "pointer")
             .attr("width", vlIconSize)
             .attr("height", vlIconSize)
-            .attr("fill", vlIconColor)
+
             .style(
               "transform",
               `translate(${-(vlIconSize + vlIconGap) * 3}px, ${0})`
             )
             .on("click", function () {
+              const vlContainer = d3.select(this.parentNode.parentNode);
               const data = d3
                 .select(this.parentNode.parentNode.parentNode)
                 .datum();
-              self.togglePin(data);
+              self.togglePin(data, vlContainer);
             });
 
           const vlBoxes = vegeLiteContainers
@@ -647,9 +649,10 @@ class ForceGraph {
   }
 
   // toggle data.hasPinned of one node
-  togglePin(data) {
+  togglePin(data, vlContainer) {
     // change pinned state
     data.hasPinned = !data.hasPinned;
+    vlContainer.classed("has-pinned", data.hasPinned);
     // change position status of node data
     this.resetFixedNode(data);
   }
