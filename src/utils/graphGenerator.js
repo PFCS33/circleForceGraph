@@ -5,19 +5,19 @@ class ForceGraph {
     // viewbox of container svg
     this.containerViewWidth = 1920;
     this.containerViewHeight = 1080;
-    this.simulation = null;
     // node & link data for controling force graph
     // add config variables into origin data
     this.nodeData = nodeData.map((d) => ({
       ...d,
       showVL: false,
+      hasPinned: false,
       vlConfig: null, // {view, border(w/h/r), img(w/h)}
     }));
     this.linkData = linkData.map((d) => ({
       ...d,
     }));
+
     // set attr of svg container
-    this.svgContainer = this.setSvgContainer(containerId);
     // create id map for nodes & links data
     this.nodeIdMap = new Map();
     this.linkIdMap = new Map();
@@ -27,6 +27,9 @@ class ForceGraph {
     this.linkData.forEach((link) => {
       this.linkIdMap.set(`${link.source}_${link.target}`, link);
     });
+    // other variables' initialization
+    this.svgContainer = this.setSvgContainer(containerId);
+    this.simulation = null;
     // set initial value of max_layer
     this.maxLayer = d3.max(this.nodeData, (d) => d.layer);
     // other defalt configs
@@ -44,7 +47,7 @@ class ForceGraph {
       positionY: this.containerViewHeight / 2,
       positionStrength: 0.1,
       collideStrength: 1,
-      chargeStrength: -250,
+      chargeStrength: -100,
       radialStrength: 1,
       nodeR: 10,
       baseRadius: 250,
@@ -190,7 +193,7 @@ class ForceGraph {
         simulation.alphaTarget(self.defaltForceConfig.alphaTarget);
       }
 
-      if (event.subject.pinned) {
+      if (event.subject.hasPinned) {
         event.subject.fx = event.subject.x;
         event.subject.fy = event.subject.y;
       } else {
@@ -366,7 +369,6 @@ class ForceGraph {
             .attr("stroke-width", bgCircleWidth)
             .attr("fill", "none")
             .attr("opacity", 0);
-
           this.fadeInTransition(bgCircles, 0.3);
         },
         (update) => update,
@@ -428,10 +430,25 @@ class ForceGraph {
           const vegeLiteContainers = nodeGs
             .append("g")
             .attr("class", "vl-container")
-
             .attr("display", function () {
               const data = d3.select(this.parentNode).datum();
               return !data.showVL ? "none" : null;
+            })
+            .on("dblclick", function () {
+              const data = d3.select(this.parentNode).datum();
+              // change pinned state
+              data.hasPinned = !data.hasPinned;
+              if (data.hasPinned) {
+                data.fx = data.x;
+                data.fy = data.y;
+              } else {
+                data.fx = null;
+                data.fy = null;
+              }
+            })
+            .on("dblclick.zoom", function (event) {
+              event.preventDefault();
+              event.stopPropagation();
             });
           // rect as border
           const borders = vegeLiteContainers
@@ -441,7 +458,6 @@ class ForceGraph {
             .attr("stroke", borderStroke)
             .attr("stroke-width", borderWidth)
             .attr("rx", borderCornerR);
-
           // rect as headers
           const headers = vegeLiteContainers
             .append("g")
