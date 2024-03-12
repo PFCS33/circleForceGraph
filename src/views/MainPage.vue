@@ -4,14 +4,17 @@
     v-loading="isLoading"
     element-loading-text="Computing..."
   >
-    <InfoPanel class="panel"></InfoPanel>
-    <CircleGraph v-if="hasGetData" :graphData="graphData"></CircleGraph>
+    <CircleGraph
+      class="graph"
+      v-if="hasGetData"
+      :graphData="graphData"
+    ></CircleGraph>
   </div>
 </template>
 <script setup>
 import { ref, onMounted } from "vue";
 import CircleGraph from "@/components/circle-graph/CircleGraph.vue";
-import InfoPanel from "@/components/circle-graph/InfoPanel.vue";
+
 import { fetchData } from "@/utils/api";
 
 const graphData = ref(null);
@@ -36,19 +39,14 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .container {
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
+  @include container-base();
 
   @include flex-box(column);
   align-items: center;
   justify-content: center;
-  position: relative;
 
-  .panel {
-    position: absolute;
-    top: 0;
-    right: 0;
+  .graph {
+    @include container-base();
   }
 }
 </style>

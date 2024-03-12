@@ -67,3 +67,23 @@
     position: absolute;
   }
 }
+
+@mixin slide-animation() {
+  .slide-enter-active {
+    transition: all 70ms ease-out;
+  }
+
+  .slide-leave-active {
+    transition: all 70ms ease-in;
+  }
+
+  .slide-enter-from,
+  .slide-leave-to {
+    transform: translateX(20rem); /* 初始状态和最终状态 */
+  }
+
+  .slide-enter-to,
+  .slide-leave-from {
+    transform: translateX(0); /* 平移隐藏 */
+  }
+}
