@@ -32,6 +32,8 @@ class ForceGraph {
     this.simulation = null;
     // set initial value of max_layer
     this.maxLayer = d3.max(this.nodeData, (d) => d.layer);
+    // set event listeners, to reate with .vue file
+    this.eventListeners = {};
     // other defalt configs
     this.durationTime = 150;
     this.defaltForceConfig = {
@@ -173,9 +175,9 @@ class ForceGraph {
       if (!event.active) {
         simulation
           .alphaTarget(
-            +self.defaltForceConfig.alphaTarget + 0.3 > 1
+            +self.defaltForceConfig.alphaTarget + 0.5 > 1
               ? 1
-              : +self.defaltForceConfig.alphaTarget + 0.3
+              : +self.defaltForceConfig.alphaTarget + 0.5
           )
           .restart();
       }
@@ -390,6 +392,11 @@ class ForceGraph {
               const topG = d3.select(this.parentNode);
               const data = topG.datum();
               if (data.id !== 0) {
+                // emit node click event
+                self.emit("node-click", {
+                  id: data.id,
+                  element: topG.selectChild(".vl-container"),
+                });
                 // change data
                 data.showVL = true;
                 // switch display btw circle and vega-lite
@@ -399,7 +406,7 @@ class ForceGraph {
                 const vlContainer = topG.selectChild(".vl-container");
                 vlContainer.attr("opacity", 0).attr("display", null);
                 vlContainer
-                  .selectChild(".border")
+                  .selectChildren(".border")
                   .attr("width", 0)
                   .attr("height", 0);
                 // if don't have config, draw vega-lite graph
@@ -426,24 +433,43 @@ class ForceGraph {
               const data = d3.select(this.parentNode).datum();
               return !data.showVL ? "none" : null;
             })
+
             .on("dblclick", function () {
               const data = d3.select(this.parentNode).datum();
               const vlContainer = d3.select(this);
 
               self.togglePin(data, vlContainer);
             })
+            .on("click", function () {
+              // emit node click event
+              const topG = d3.select(this.parentNode);
+              const data = topG.datum();
+              self.emit("node-click", {
+                id: data.id,
+                element: topG.selectChild(".vl-container"),
+              });
+            })
             .on("dblclick.zoom", function (event) {
               event.preventDefault();
               event.stopPropagation();
             });
           // rect as border
+
           const borders = vegeLiteContainers
             .append("rect")
-            .attr("class", "border")
+            .attr("class", "border stroke")
             .attr("fill", borderFill)
             .attr("stroke", borderStroke)
             .attr("stroke-width", borderWidth)
             .attr("rx", borderCornerR);
+
+          const shadowBorders = vegeLiteContainers
+            .append("rect")
+            .attr("class", "border shadow")
+            .attr("fill", borderFill)
+            .attr("stroke", null)
+            .attr("rx", borderCornerR);
+
           // rect as headers
           const headers = vegeLiteContainers
             .append("g")
@@ -560,7 +586,6 @@ class ForceGraph {
   drawVl(
     topG,
     {
-      durationTime = this.durationTime,
       vlWidth = 125,
       vlHeight = 125,
       borderWidthOffset = 3,
@@ -640,6 +665,24 @@ class ForceGraph {
     });
   }
   // belows are small utils functions
+  // register callback functions of certain event
+  on(event, callback) {
+    const eventListeners = this.eventListeners;
+    if (!eventListeners[event]) {
+      // if do not have any callback, register an empty array
+      eventListeners[event] = [];
+    }
+    eventListeners[event].push(callback);
+  }
+
+  // emit event, and call all callbacks to process
+  emit(event, paylaod) {
+    const eventListeners = this.eventListeners;
+    if (eventListeners[event]) {
+      eventListeners[event].forEach((callback) => callback(paylaod));
+    }
+  }
+
   // compute R of certain layer
   getLayerR(
     layer,
@@ -675,7 +718,7 @@ class ForceGraph {
   // specific transition for vega-lite graph - in
   vlInTransition(vlContainer, width, height, duration = this.durationTime) {
     vlContainer
-      .selectChild(".border")
+      .selectChildren(".border")
       .attr("x", width / 2)
       .attr("y", height / 2)
       .transition()
@@ -693,7 +736,7 @@ class ForceGraph {
   // specific transition for vega-lite graph - out
   vlOutTransition(vlContainer, width, height, duration = this.durationTime) {
     vlContainer
-      .selectChild(".border")
+      .selectChildren(".border")
       .transition()
       .duration(duration + 150)
       .attr("x", width / 2)

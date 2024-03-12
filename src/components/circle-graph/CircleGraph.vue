@@ -30,13 +30,13 @@
           d="M334.72 612.16L127.36 404.736l85.12-85.184L390.016 391.04l275.968-214.4-72.32-72.32L678.912 19.2l82.944 82.88 0.192-0.128L928 267.84l-0.192 0.256 82.944 82.944-85.12 85.184-72.32-72.256L638.848 640l71.488 177.408-85.12 85.184-207.488-207.36-255.36 255.296-82.944-82.944 255.36-255.36z"
         ></path>
       </symbol>
-      <filter id="inset-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <filter id="inset-shadow" x="-100%" y="-100%" width="300%" height="300%">
         <feComponentTransfer in="SourceAlpha">
           <feFuncA type="table" tableValues="1 0"></feFuncA>
         </feComponentTransfer>
         <feGaussianBlur stdDeviation="3"></feGaussianBlur>
         <feOffset dx="5" dy="5" result="offsetblur"></feOffset>
-        <feFlood flood-color="#ccc" result="color"></feFlood>
+        <feFlood flood-color="#cccccc" result="color"></feFlood>
         <feComposite in2="offsetblur" operator="in"></feComposite>
         <feComposite in2="SourceAlpha" operator="in"></feComposite>
         <feMerge>
@@ -74,18 +74,49 @@
 </template>
 
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { ForceGraph } from "@/utils/graphGenerator.js";
 
+/* -------------------------------------------------------------------------- */
 // get props
+/* -------------------------------------------------------------------------- */
 const props = defineProps({
   graphData: Object,
 });
 const nodeData = props.graphData.node;
 const linkData = props.graphData.link;
+/* -------------------------------------------------------------------------- */
+// focus node related
+/* -------------------------------------------------------------------------- */
+const focusNode = ref(null);
+// watch to set css of new & old node
+watch(focusNode, (newVal, oldVal) => {
+  // prevent null error. but seems no sence if newVal == null
+  if (newVal) {
+    // cancle old node's css
+    // only if node change, else persist
+    if (oldVal && newVal.id != oldVal.id) {
+      toggleFocusCSS(oldVal, false);
+    }
+    // set new node's css
+    // only if node change
+    if (!oldVal || newVal.id != oldVal.id) {
+      toggleFocusCSS(newVal, true);
+    }
+  }
+});
+const toggleFocusCSS = (data, isHilight) => {
+  const element = data.element;
+  element.classed("has-focus", isHilight);
+};
+// call back function of event listener
+const setFocusNode = (data) => {
+  focusNode.value = data;
+};
 
 onMounted(() => {
   const forceGraph = new ForceGraph("#svg-container", nodeData, linkData);
+  forceGraph.on("node-click", setFocusNode);
   forceGraph.createForceGraph();
 });
 </script>
@@ -114,11 +145,19 @@ onMounted(() => {
     .border {
       transition: filter 0.2s ease-out;
     }
+    &.has-focus {
+      .border.stroke {
+        transition: stroke 0.2s ease-out;
+        stroke-width: $border-width-focus;
+
+        stroke: $primary-color;
+      }
+    }
     &.has-pinned {
       .vl-icon.pin {
         fill: $primary-color;
       }
-      .border {
+      .border.shadow {
         filter: url(#inset-shadow);
       }
     }
