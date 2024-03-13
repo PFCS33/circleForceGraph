@@ -188,6 +188,12 @@ onMounted(() => {
 
 <style lang="scss">
 #svg-container {
+  .circle-container {
+    transition: transform 0.2s ease-out;
+    &.has-hover {
+      transform: scale(1.5);
+    }
+  }
   .vl-container {
     will-change: transform;
     .header {

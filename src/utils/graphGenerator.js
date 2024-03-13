@@ -217,7 +217,7 @@ class ForceGraph {
       .on("end", dragended);
     // apply drag to svg elements
     const targetNodeGs = nodeTopG.selectChildren("g").filter((d) => d.id !== 0);
-    targetNodeGs.selectChildren(".base-circle").call(dragDefine);
+    targetNodeGs.selectChildren(".circle-container").call(dragDefine);
     targetNodeGs.selectChildren(".vl-container").call(dragDefine);
   }
 
@@ -350,7 +350,12 @@ class ForceGraph {
     const nodeTopG = svgContainer.selectChild(".topg-node");
     const linkTopG = svgContainer.selectChild(".topg-link");
     const bgTopG = svgContainer.selectChild(".topg-bg");
+    // create map between insight category and color
+    const CategoryColorMap = d3.scaleOrdinal(
+      ["point", "shape", "compound"],
 
+      ["#C69DE9", "#F7A69F", "#53C4B6"]
+    );
     bgTopG
       .selectAll("circle")
       .data(d3.range(1, this.maxLayer + 1))
@@ -379,9 +384,13 @@ class ForceGraph {
       .join(
         (enter) => {
           const nodeGs = enter.append("g");
+          // add container of circle related
           const circleContainer = nodeGs
             .append("g")
-            .attr("class", "circle-container")
+            .attr("class", "circle-container");
+          // add cursor event above g
+          circleContainer
+            .filter((d) => d.id !== 0)
             .attr("display", function () {
               const data = d3.select(this.parentNode).datum();
               return data.showVL ? "none" : null;
@@ -421,6 +430,16 @@ class ForceGraph {
                   self.refreshSimulation();
                 }
               }
+            })
+            .on("mouseover", function () {
+              // add hover class, prepare for adding fancier css
+              const circleContainer = d3.select(this);
+              circleContainer.classed("has-hover", true);
+            })
+            .on("mouseout", function () {
+              // cancle hover class
+              const circleContainer = d3.select(this);
+              circleContainer.classed("has-hover", false);
             });
           // add base circle
           circleContainer
@@ -428,11 +447,12 @@ class ForceGraph {
             .attr("class", "base-circle")
             .attr("cursor", "pointer")
             .attr("r", (d) => (d.id === 0 ? circleR * 1.2 : circleR))
-            .attr("fill", (d) => (d.id === 0 ? "#f4acb7" : circleFill));
+            .attr("fill", (d) =>
+              d.id === 0 ? "#64748b" : CategoryColorMap(d.category)
+            );
 
           // add custom icon png
           circleContainer
-            .filter((d) => d.id !== 0)
             .append("image")
             .attr("class", "insight-icon")
             .attr("width", insightIconSize)
