@@ -18,12 +18,12 @@ export default {
 
 <style scoped>
 .card {
-  border-radius: 12px;
+  border-radius: 2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
 }
 
 .flat {
-  border-radius: 12px;
-  box-shadow: 0 0 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
 }
 </style>

@@ -4,11 +4,16 @@
     v-loading="isLoading"
     element-loading-text="Computing..."
   >
-    <CircleGraph
-      class="graph"
-      v-if="hasGetData"
-      :graphData="graphData"
-    ></CircleGraph>
+    <div class="nav-bar">
+      <div class="brand">Exploration</div>
+    </div>
+    <div class="content-box">
+      <CircleGraph
+        class="graph"
+        v-if="hasGetData"
+        :graphData="graphData"
+      ></CircleGraph>
+    </div>
   </div>
 </template>
 <script setup>
@@ -40,13 +45,28 @@ onMounted(async () => {
 <style lang="scss" scoped>
 .container {
   @include container-base();
-
   @include flex-box(column);
-  align-items: center;
-  justify-content: center;
+  max-height: 100%;
 
-  .graph {
-    @include container-base();
+  .nav-bar {
+    flex: auto;
+    width: 100%;
+    box-shadow: 0rem 0.1rem 0.2rem 0rem rgba(0, 0, 0, 0.2);
+    z-index: $z-middle;
+
+    @include flex-box(column);
+    justify-content: center;
+    padding-left: 1rem;
+    .brand {
+      font-size: 2rem;
+      font-weight: bold;
+      color: $primary-color;
+    }
+  }
+
+  .content-box {
+    max-height: 95%;
+    width: 100%;
   }
 }
 </style>
