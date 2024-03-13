@@ -20,7 +20,7 @@
 import { ref, onMounted } from "vue";
 import CircleGraph from "@/components/circle-graph/CircleGraph.vue";
 
-import { fetchData } from "@/utils/api";
+import { baseUrl, fetchData } from "@/utils/api";
 
 const graphData = ref(null);
 const isLoading = ref(true);
@@ -29,13 +29,12 @@ const hasGetData = ref(false);
 onMounted(async () => {
   // fetch data from server
   try {
-    const baseUrl = "http://localhost:3000";
     graphData.value = await fetchData(baseUrl + "/graph/data");
     hasGetData.value = true;
 
     ElMessage.success(`Calculation complete`);
   } catch (e) {
-    ElMessage.error(`Error: ${e.message}`);
+    ElMessage.error(`Graph Error: ${e.message}`);
   } finally {
     isLoading.value = false;
   }
@@ -47,12 +46,13 @@ onMounted(async () => {
   @include container-base();
   @include flex-box(column);
   max-height: 100%;
+  gap: 0.5rem;
 
   .nav-bar {
     flex: auto;
     width: 100%;
     box-shadow: 0rem 0.1rem 0.2rem 0rem rgba(0, 0, 0, 0.2);
-    z-index: $z-middle;
+    z-index: $z-top;
 
     @include flex-box(column);
     justify-content: center;

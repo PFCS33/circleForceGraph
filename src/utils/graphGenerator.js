@@ -51,7 +51,7 @@ class ForceGraph {
       collideStrength: 1,
       chargeStrength: -250,
       radialStrength: 1,
-      nodeR: 20,
+      nodeR: 30,
       baseRadius: 250,
     };
     this.defaltDomConfig = {
@@ -59,15 +59,15 @@ class ForceGraph {
       circleR: this.defaltForceConfig.nodeR,
       circleFill: "#aaa",
       // insight icon
-      insightIconSize: 30,
+      insightIconSize: 45,
       // vl border
       borderFill: "#fff",
       borderStroke: "#ccc",
       borderWidth: 5,
       borderCornerR: 10,
       // vl icon
-      vlIconSize: 15,
-      vlIconGap: 2,
+      vlIconSize: 20,
+      vlIconGap: 3,
       // vlIconColor: "#aaa",
       // other
       durationTime: this.durationTime,
@@ -634,8 +634,8 @@ class ForceGraph {
   drawVl(
     topG,
     {
-      vlWidth = 125,
-      vlHeight = 125,
+      vlWidth = 150,
+      vlHeight = 150,
       borderWidthOffset = 3,
       borderHeightOffset = 8,
       vlIconSize = this.defaltDomConfig.vlIconSize,

@@ -8,7 +8,10 @@
 .panel-container {
   width: 20rem;
   height: 100%;
+  z-index: $z-middle;
 
-  border: 2px solid black;
+  background-color: #fff;
+  border-radius: $border-radius;
+  border: $border;
 }
 </style>

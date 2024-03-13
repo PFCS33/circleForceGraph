@@ -1,4 +1,5 @@
 /* provide utils to communicate with server*/
+const baseUrl = "http://localhost:3000";
 
 // GET
 async function fetchData(url) {
@@ -14,4 +15,22 @@ async function fetchData(url) {
   }
 }
 
-export { fetchData };
+// Post
+async function postData(url, signal, data = {}) {
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      signal: signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    const returnData = await response.json();
+    return returnData;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export { baseUrl, fetchData, postData };
