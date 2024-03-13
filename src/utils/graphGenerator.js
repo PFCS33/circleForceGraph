@@ -61,7 +61,7 @@ class ForceGraph {
       // vl border
       borderFill: "#fff",
       borderStroke: "#ccc",
-      borderWidth: 1.5,
+      borderWidth: 5,
       borderCornerR: 10,
       // vl icon
       vlIconSize: 15,
@@ -423,10 +423,14 @@ class ForceGraph {
                 }
               }
             });
+          // add custom icon png
+          // nodeGs
+          // .append('image')
+          // .href('')
 
           // add vega-lite related
           // g as vega-lite container
-          const vegeLiteContainers = nodeGs
+          const vlContainer = nodeGs
             .append("g")
             .attr("class", "vl-container")
             .attr("display", function () {
@@ -440,30 +444,33 @@ class ForceGraph {
 
               self.togglePin(data, vlContainer);
             })
+
+            .on("dblclick.zoom", function (event) {
+              event.preventDefault();
+              event.stopPropagation();
+            });
+
+          const vlBody = vlContainer
+            .append("g")
+            .attr("class", "vl-body")
             .on("click", function () {
               // emit node click event
-              const topG = d3.select(this.parentNode);
+              const topG = d3.select(this.parentNode.parentNode);
               const data = topG.datum();
               self.emit("node-click", {
                 id: data.id,
                 element: topG.selectChild(".vl-container"),
               });
-            })
-            .on("dblclick.zoom", function (event) {
-              event.preventDefault();
-              event.stopPropagation();
             });
           // rect as border
-
-          const borders = vegeLiteContainers
+          const borders = vlBody
             .append("rect")
             .attr("class", "border stroke")
             .attr("fill", borderFill)
             .attr("stroke", borderStroke)
             .attr("stroke-width", borderWidth)
             .attr("rx", borderCornerR);
-
-          const shadowBorders = vegeLiteContainers
+          const shadowBorders = vlBody
             .append("rect")
             .attr("class", "border shadow")
             .attr("fill", borderFill)
@@ -471,9 +478,7 @@ class ForceGraph {
             .attr("rx", borderCornerR);
 
           // rect as headers
-          const headers = vegeLiteContainers
-            .append("g")
-            .attr("class", "header");
+          const headers = vlContainer.append("g").attr("class", "header");
           // add vl icons
           headers
             .append("use")
@@ -487,6 +492,8 @@ class ForceGraph {
             .on("click", function () {
               const topG = d3.select(this.parentNode.parentNode.parentNode);
               const data = topG.datum();
+              // emit emplty node, clear focus status
+              self.emit("node-click", null);
               // reset fixed status of node, if it was fixed
               const vlContainer = topG.selectChild(".vl-container");
               if (data.hasPinned) {
@@ -541,9 +548,7 @@ class ForceGraph {
               self.togglePin(data, vlContainer);
             });
 
-          const vlBoxes = vegeLiteContainers
-            .append("g")
-            .attr("class", "vl-box");
+          const vlBoxes = vlBody.append("g").attr("class", "vl-box");
 
           // add animation
           this.fadeInTransition(nodeGs);
@@ -595,7 +600,7 @@ class ForceGraph {
     } = {}
   ) {
     const vlContainer = topG.selectChild(".vl-container");
-    const vlBox = vlContainer.selectChild(".vl-box");
+    const vlBox = vlContainer.selectChild(".vl-body").selectChild(".vl-box");
 
     // create new config data
     let configData = {
@@ -718,6 +723,7 @@ class ForceGraph {
   // specific transition for vega-lite graph - in
   vlInTransition(vlContainer, width, height, duration = this.durationTime) {
     vlContainer
+      .selectChild(".vl-body")
       .selectChildren(".border")
       .attr("x", width / 2)
       .attr("y", height / 2)
@@ -736,6 +742,7 @@ class ForceGraph {
   // specific transition for vega-lite graph - out
   vlOutTransition(vlContainer, width, height, duration = this.durationTime) {
     vlContainer
+      .selectChild(".vl-body")
       .selectChildren(".border")
       .transition()
       .duration(duration + 150)

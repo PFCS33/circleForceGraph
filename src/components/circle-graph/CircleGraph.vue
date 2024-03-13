@@ -5,6 +5,7 @@
     </transition>
     <svg id="svg-container">
       <defs>
+        <!-- vl-icon -->
         <symbol
           id="close"
           viewBox="0 0 1024 1024"
@@ -34,6 +35,7 @@
             d="M334.72 612.16L127.36 404.736l85.12-85.184L390.016 391.04l275.968-214.4-72.32-72.32L678.912 19.2l82.944 82.88 0.192-0.128L928 267.84l-0.192 0.256 82.944 82.944-85.12 85.184-72.32-72.256L638.848 640l71.488 177.408-85.12 85.184-207.488-207.36-255.36 255.296-82.944-82.944 255.36-255.36z"
           ></path>
         </symbol>
+        <!-- filter -->
         <filter
           id="inset-shadow"
           x="-100%"
@@ -116,25 +118,31 @@ const toggleShowPanel = () => {
     showPanel.value = true;
   }
 };
+const closeShowPanel = () => {
+  showPanel.value = false;
+};
 /* -------------------------------------------------------------------------- */
 // focus node related
 /* -------------------------------------------------------------------------- */
 const focusNode = ref(null);
 // watch to set css of new & old node
 watch(focusNode, (newVal, oldVal) => {
-  // prevent null error. but seems no sence if newVal == null
-  if (newVal) {
-    // cancle old node's css
-    // only if node change, else persist
-    if (oldVal && newVal.id != oldVal.id) {
-      toggleFocusCSS(oldVal, false);
+  console.log(oldVal);
+  console.log(newVal);
+
+  // cancle old node's css
+  // only if node change, else persist
+  if (!newVal || (oldVal && newVal.id != oldVal.id)) {
+    toggleFocusCSS(oldVal, false);
+    if (!newVal) {
+      closeShowPanel();
     }
-    // set new node's css
-    // only if node change
-    if (!oldVal || newVal.id != oldVal.id) {
-      toggleFocusCSS(newVal, true);
-      toggleShowPanel();
-    }
+  }
+  // set new node's css
+  // only if node change
+  if (!oldVal || (newVal && newVal.id != oldVal.id)) {
+    toggleFocusCSS(newVal, true);
+    toggleShowPanel();
   }
 });
 const toggleFocusCSS = (data, isHilight) => {
@@ -184,6 +192,7 @@ onMounted(() => {
 <style lang="scss">
 #svg-container {
   .vl-container {
+    will-change: transform;
     .header {
       .vl-icon {
         fill: $icon-color-gray;
@@ -193,6 +202,7 @@ onMounted(() => {
         }
       }
     }
+
     .border {
       transition: filter 0.2s ease-out;
     }
