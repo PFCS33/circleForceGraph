@@ -51,13 +51,15 @@ class ForceGraph {
       collideStrength: 1,
       chargeStrength: -250,
       radialStrength: 1,
-      nodeR: 10,
+      nodeR: 20,
       baseRadius: 250,
     };
     this.defaltDomConfig = {
       // base circle
       circleR: this.defaltForceConfig.nodeR,
       circleFill: "#aaa",
+      // insight icon
+      insightIconSize: 30,
       // vl border
       borderFill: "#fff",
       borderStroke: "#ccc",
@@ -304,7 +306,6 @@ class ForceGraph {
             // if (targetNode.showVL) {
             //   distance += 10;
             // }
-            // console.log(sourceNode.id, targetNode.id, distance);
 
             return distance;
           })
@@ -324,6 +325,8 @@ class ForceGraph {
       // base circle
       circleR,
       circleFill,
+      // insight icon
+      insightIconSize,
       // vl border
       borderFill,
       borderStroke,
@@ -376,13 +379,9 @@ class ForceGraph {
       .join(
         (enter) => {
           const nodeGs = enter.append("g");
-          // add base circle
-          nodeGs
-            .append("circle")
-            .attr("class", "base-circle")
-            .attr("cursor", "pointer")
-            .attr("r", (d) => (d.id === 0 ? circleR * 1.5 : circleR))
-            .attr("fill", (d) => (d.id === 0 ? "#f4acb7" : circleFill))
+          const circleContainer = nodeGs
+            .append("g")
+            .attr("class", "circle-container")
             .attr("display", function () {
               const data = d3.select(this.parentNode).datum();
               return data.showVL ? "none" : null;
@@ -390,6 +389,7 @@ class ForceGraph {
             .on("click", function () {
               // get top g & data of this node
               const topG = d3.select(this.parentNode);
+              const circleContainer = d3.select(this);
               const data = topG.datum();
               if (data.id !== 0) {
                 // emit node click event
@@ -400,8 +400,7 @@ class ForceGraph {
                 // change data
                 data.showVL = true;
                 // switch display btw circle and vega-lite
-                const baseCirlce = topG.selectChild(".base-circle");
-                self.fadeOutTransition(baseCirlce, "hide");
+                self.fadeOutTransition(circleContainer, "hide");
                 // reset attr of vl-container, prepare for animation
                 const vlContainer = topG.selectChild(".vl-container");
                 vlContainer.attr("opacity", 0).attr("display", null);
@@ -423,10 +422,30 @@ class ForceGraph {
                 }
               }
             });
+          // add base circle
+          circleContainer
+            .append("circle")
+            .attr("class", "base-circle")
+            .attr("cursor", "pointer")
+            .attr("r", (d) => (d.id === 0 ? circleR * 1.2 : circleR))
+            .attr("fill", (d) => (d.id === 0 ? "#f4acb7" : circleFill));
+
           // add custom icon png
-          // nodeGs
-          // .append('image')
-          // .href('')
+          circleContainer
+            .filter((d) => d.id !== 0)
+            .append("image")
+            .attr("class", "insight-icon")
+            .attr("width", insightIconSize)
+            .attr("height", insightIconSize)
+            .attr("x", -insightIconSize / 2)
+            .attr("y", -insightIconSize / 2)
+            .attr("pointer-events", "none")
+            .attr("href", function () {
+              const topG = d3.select(this.parentNode);
+              const data = topG.datum();
+              const href = `/pic/insight-icon/${data.type}.png`;
+              return href;
+            });
 
           // add vega-lite related
           // g as vega-lite container
@@ -503,7 +522,7 @@ class ForceGraph {
               data.showVL = false;
               self.refreshSimulation();
               // add animation of vl graph
-              const baseCirlce = topG.selectChild(".base-circle");
+              const circleContainer = topG.selectChild(".circle-container");
               const vlConfig = data.vlConfig;
               self.vlOutTransition(
                 vlContainer,
@@ -511,9 +530,13 @@ class ForceGraph {
                 vlConfig.border.height
               );
               // prepare base-cirle for fade-in animation
-              baseCirlce.attr("display", null).attr("opacity", 0);
+              circleContainer.attr("display", null).attr("opacity", 0);
               // add animation of base-circle
-              self.fadeInTransition(baseCirlce, 1, self.durationTime + 100);
+              self.fadeInTransition(
+                circleContainer,
+                1,
+                self.durationTime + 100
+              );
             });
           headers
             .append("use")

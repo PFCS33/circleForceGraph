@@ -127,9 +127,6 @@ const closeShowPanel = () => {
 const focusNode = ref(null);
 // watch to set css of new & old node
 watch(focusNode, (newVal, oldVal) => {
-  console.log(oldVal);
-  console.log(newVal);
-
   // cancle old node's css
   // only if node change, else persist
   if (!newVal || (oldVal && newVal.id != oldVal.id)) {
