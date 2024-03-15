@@ -79,11 +79,13 @@
 
   .slide-enter-from,
   .slide-leave-to {
-    transform: translateX(20rem); /* 初始状态和最终状态 */
+    transform: translateX(20rem);
+    visibility: hidden;
   }
 
   .slide-enter-to,
   .slide-leave-from {
-    transform: translateX(0); /* 平移隐藏 */
+    transform: translateX(0);
+    visibility: visible;
   }
 }
