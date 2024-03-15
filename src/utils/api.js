@@ -16,11 +16,10 @@ async function fetchData(url) {
 }
 
 // Post
-async function postData(url, signal, data = {}) {
+async function postData(url, data = {}) {
   try {
     const response = await fetch(url, {
       method: "POST",
-      signal: signal,
       headers: {
         "Content-Type": "application/json",
       },

@@ -1,12 +1,7 @@
 <template>
   <div class="graph-container">
     <transition name="slide">
-      <InfoPanel
-        class="panel"
-        v-if="showPanel"
-        v-loading="isLoading"
-        element-loading-text="Fetching data..."
-      ></InfoPanel>
+      <InfoPanel class="panel" v-if="showPanel" :id="panelId"></InfoPanel>
     </transition>
     <svg id="svg-container">
       <defs>
@@ -96,10 +91,10 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, nextTick } from "vue";
+import { onMounted, ref, watch, nextTick, onUnmounted } from "vue";
 import { ForceGraph } from "@/utils/graphGenerator.js";
 import InfoPanel from "@/components/circle-graph/InfoPanel.vue";
-import { baseUrl, postData } from "@/utils/api.js";
+
 /* -------------------------------------------------------------------------- */
 // get props
 /* -------------------------------------------------------------------------- */
@@ -112,7 +107,6 @@ const linkData = props.graphData.link;
 // panel related
 /* -------------------------------------------------------------------------- */
 const showPanel = ref(false);
-const isLoading = ref(true);
 const toggleShowPanel = () => {
   if (showPanel.value) {
     showPanel.value = false;
@@ -132,28 +126,7 @@ const closeShowPanel = () => {
 // focus node related
 /* -------------------------------------------------------------------------- */
 const focusNode = ref(null);
-let currentAbortController = null; // trace currenet http request
-// communicate to server to get other insights in the same data scope
-async function postFunc(id) {
-  try {
-    isLoading.value = true;
-    // use abortController to only proccess newest request
-    if (currentAbortController) {
-      currentAbortController.abort();
-    }
-    currentAbortController = new AbortController();
-    const signal = currentAbortController.signal;
-    const data = await postData(baseUrl + "/panel/data", signal, {
-      id: id,
-    });
-    console.log(data);
-    isLoading.value = false;
-  } catch (e) {
-    if (error.name !== "AbortError") {
-      ElMessage.error(`Panel Error: ${e.message}`);
-    }
-  }
-}
+const panelId = ref(null);
 // watch to set css of new & old node
 watch(focusNode, (newVal, oldVal) => {
   // cancle old node's css
@@ -168,8 +141,10 @@ watch(focusNode, (newVal, oldVal) => {
   // only if node change
   if (!oldVal || (newVal && newVal.id != oldVal.id)) {
     toggleFocusCSS(newVal, true);
+    // set panel id
+    panelId.value = newVal.id;
+    // switch panel status
     toggleShowPanel();
-    postFunc(newVal.id);
   }
 });
 const toggleFocusCSS = (data, isHilight) => {
@@ -188,13 +163,18 @@ onMounted(() => {
   forceGraph.on("node-click", setFocusNode);
   forceGraph.createForceGraph();
 });
+
+onUnmounted(() => {
+  forceGraph.off("node-click", setFocusNode);
+});
 </script>
 
 <style lang="scss" scoped>
 .graph-container {
   @include container-base();
   position: relative;
-  overflow: hidden;
+  // isolate inner elements from other doms, preventing jiggles when side animation is applied
+  contain: layout style;
 
   .panel {
     position: absolute;
