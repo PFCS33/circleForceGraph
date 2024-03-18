@@ -237,10 +237,13 @@ onMounted(() => {
         width: 60%;
         height: 98%;
         flex-shrink: 0;
+        svg {
+          // background-color: #fff;
+        }
       }
       .text-container {
         background-color: $background-color-light;
-        box-shadow: 0.1rem 0.1rem 0.2rem 0.15rem rgba(0, 0, 0, 0.26);
+        box-shadow: 0.1rem 0.1rem 0.2rem 0.15rem rgba($primary-color, 0.4);
 
         // margin-right: 1.2rem;
         padding: 0.8rem 1rem;
@@ -311,9 +314,8 @@ onMounted(() => {
       }
       &.isSelected {
         box-shadow: inset 0.5rem 0.3rem 0.8rem -0.3rem rgba($primary-color, 0.5);
+
         .text-container {
-          // box-shadow: none;
-          // border: $border;
           .btn {
             color: $third-color-light;
           }

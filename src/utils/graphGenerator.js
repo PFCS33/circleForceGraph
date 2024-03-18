@@ -565,11 +565,20 @@ class ForceGraph {
             .attr("cursor", "pointer")
             .attr("width", vlIconSize)
             .attr("height", vlIconSize)
-
             .style(
               "transform",
               `translate(${-(vlIconSize + vlIconGap) * 2}px, ${0})`
-            );
+            )
+
+            .on("click", function () {
+              const topG = d3.select(this.parentNode.parentNode.parentNode);
+              const data = topG.datum();
+              // emit question click event
+              self.emit("question-click", {
+                id: data.id,
+                element: topG,
+              });
+            });
 
           headers
             .append("use")

@@ -95,3 +95,24 @@
     visibility: visible;
   }
 }
+@mixin pop-animation() {
+  .pop-enter-active {
+    transition: all 70ms ease-out;
+  }
+
+  .pop-leave-active {
+    transition: all 70ms ease-in;
+  }
+
+  .pop-enter-from,
+  .pop-leave-to {
+    transform: translateY(20rem);
+    visibility: hidden;
+  }
+
+  .pop-enter-to,
+  .pop-leave-from {
+    transform: translateY(0);
+    visibility: visible;
+  }
+}
