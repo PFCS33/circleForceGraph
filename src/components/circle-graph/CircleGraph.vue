@@ -1,7 +1,21 @@
 <template>
   <div class="graph-container">
     <transition name="slide">
-      <InfoPanel class="panel" v-if="showPanel" :id="panelId"></InfoPanel>
+      <SvgIcon
+        iconName="detail"
+        class="panel-show-icon"
+        @click="cancleHide"
+        v-show="hasHide"
+      ></SvgIcon>
+    </transition>
+    <transition name="slide">
+      <InfoPanel
+        class="panel"
+        v-if="showPanel"
+        v-show="!hasHide"
+        :id="panelId"
+        @hide="hidePanel"
+      ></InfoPanel>
     </transition>
     <svg id="svg-container">
       <defs>
@@ -106,6 +120,15 @@ const linkData = props.graphData.link;
 /* -------------------------------------------------------------------------- */
 // panel related
 /* -------------------------------------------------------------------------- */
+// control whether to hide icon (detail icon related)
+const hasHide = ref(false);
+const hidePanel = () => {
+  hasHide.value = true;
+};
+const cancleHide = () => {
+  hasHide.value = false;
+};
+// control whether panel was shown
 const showPanel = ref(false);
 const toggleShowPanel = () => {
   if (showPanel.value) {
@@ -122,6 +145,7 @@ const toggleShowPanel = () => {
 const closeShowPanel = () => {
   showPanel.value = false;
 };
+
 /* -------------------------------------------------------------------------- */
 // focus node related
 /* -------------------------------------------------------------------------- */
@@ -175,6 +199,15 @@ onUnmounted(() => {
   position: relative;
   // isolate inner elements from other doms, preventing jiggles when side animation is applied
   contain: layout style;
+
+  .panel-show-icon {
+    position: absolute;
+    top: 0;
+    right: 0.3rem;
+    @include icon-style($icon-size-large);
+    border-radius: $border-radius;
+    padding: 0.3rem;
+  }
 
   .panel {
     position: absolute;

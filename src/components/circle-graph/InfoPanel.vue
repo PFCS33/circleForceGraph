@@ -1,43 +1,59 @@
 <template>
-  <div
-    class="panel-container"
-    v-loading="isLoading"
-    element-loading-text="Fetching data..."
-  >
-    <div class="scope-border">
-      <el-tag class="scope-item" v-for="(value, col) in dataScope" :key="col">{{
-        value
-      }}</el-tag>
-    </div>
-    <div class="insight-list-border">
-      <div class="insight-border" v-for="insightData in currentPageData">
-        <div class="vl-container" ref="vlContainers"></div>
-        <div class="text-container">
-          <div class="type-box">
-            <span class="title">Type</span>
-            <span class="value">{{ insightData.type }}</span>
+  <div class="v-boundary">
+    <SvgIcon
+      iconName="arrow-right"
+      class="hide-icon"
+      @click="emit('hide', null)"
+    ></SvgIcon>
+    <div
+      class="panel-container"
+      v-loading="isLoading"
+      element-loading-text="Fetching data..."
+    >
+      <div class="scope-border">
+        <el-tag
+          class="scope-item"
+          v-for="(value, col) in dataScope"
+          :key="col"
+          >{{ `${col}: ${value}` }}</el-tag
+        >
+      </div>
+      <div class="insight-list-border">
+        <div
+          class="insight-border"
+          v-for="insightData in currentPageData"
+          :class="{ isSelected: currentId === insightData.id }"
+        >
+          <div class="vl-container" ref="vlContainers"></div>
+          <div class="text-container">
+            <div class="type-box">
+              <span class="title">Type</span>
+              <span class="value">{{ insightData.type }}</span>
+            </div>
+            <div class="score-box">
+              <span class="title">Score</span>
+              <span class="value">{{ insightData.score }}</span>
+            </div>
+            <div class="desc-box">
+              <div class="title">Description</div>
+              <div class="value">{{ insightData.description }}</div>
+            </div>
+            <button @click="switchInsight(insightData)" class="btn">
+              {{ currentId === insightData.id ? "SELECTED" : "SELECT" }}
+            </button>
           </div>
-          <div class="score-box">
-            <span class="title">Score</span>
-            <span class="value">{{ insightData.score }}</span>
-          </div>
-          <div class="desc-box">
-            <div class="title">Description</div>
-            <div class="value">{{ insightData.description }}</div>
-          </div>
-          <button class="btn">SELECT</button>
         </div>
       </div>
+      <el-pagination
+        v-if="insightList"
+        small
+        :page-size="pageSize"
+        layout="prev, pager, next"
+        :total="insightList.length"
+        v-model:current-page="currentPageNumber"
+        class="pagination"
+      />
     </div>
-    <el-pagination
-      v-if="insightList"
-      small
-      :page-size="pageSize"
-      layout="prev, pager, next"
-      :total="insightList.length"
-      v-model:current-page="currentPageNumber"
-      class="pagination"
-    />
   </div>
 </template>
 
@@ -45,12 +61,21 @@
 import { watch, ref, onMounted, nextTick } from "vue";
 import { baseUrl, postData } from "@/utils/api.js";
 import vegaEmbed from "vega-embed";
+import SvgIcon from "../ui/SvgIcon.vue";
 const props = defineProps({
   id: Number,
 });
+const emit = defineEmits(["hide"]);
 // create refs
 const vlContainers = ref([]);
-
+/* -------------------------------------------------------------------------- */
+// insight switching
+/* -------------------------------------------------------------------------- */
+const currentId = ref(null);
+const switchInsight = (insightData) => {
+  const id = insightData.id;
+  currentId.value = id;
+};
 /* -------------------------------------------------------------------------- */
 // communicate with backend server
 /* -------------------------------------------------------------------------- */
@@ -104,6 +129,7 @@ const drawPanelVl = (container, data) => {
   let vlSpec = JSON.parse(data["vega-lite"]);
   vlSpec.width = "container";
   vlSpec.height = "container";
+  vlSpec.background = "transparent";
   vlSpec["usermeta"] = { embedOptions: { renderer: "svg" } };
   // render
   vegaEmbed(container.node(), vlSpec).then((result) => {
@@ -137,17 +163,32 @@ watch(currentPageData, (newVal, oldVal) => {
 // });
 
 onMounted(() => {
-  postFunc(props.id);
+  const id = props.id;
+  postFunc(id);
+  currentId.value = id;
 });
 </script>
 
 <style lang="scss" scoped>
+.v-boundary {
+  height: 100%;
+  position: relative;
+}
+.hide-icon {
+  position: absolute;
+  top: 0;
+  right: 43rem;
+  border: $border;
+  border-right: none;
+  background-color: $background-color-light;
+  @include icon-style();
+}
 .panel-container {
   width: 43rem;
   height: 100%;
   z-index: $z-middle;
 
-  background-color: #fff;
+  background-color: $background-color;
   border-radius: $border-radius;
   border: $border;
 
@@ -164,12 +205,13 @@ onMounted(() => {
     flex-shrink: 0;
     flex-grow: 0;
     height: 6%;
+    overflow-y: hidden;
+    overflow-x: auto;
   }
 
   .insight-list-border {
     flex-grow: 1;
     @include flex-box(column);
-    gap: 0.2rem;
 
     justify-content: space-between;
     .insight-border {
@@ -179,8 +221,16 @@ onMounted(() => {
       justify-content: stretch;
       align-items: center;
       border-bottom: $border;
+      padding-right: 1.2rem;
+      transition: all 0.2s ease-out;
+      // border-color: $primary-color;
       &:first-child {
         border-top: $border;
+        // border-color: $primary-color;
+      }
+      &:hover {
+        box-shadow: 0rem 0.2rem 0.6rem 0.1rem rgba(#000, 0.26);
+        // background-color: $primary-color;
       }
 
       .vl-container {
@@ -189,15 +239,21 @@ onMounted(() => {
         flex-shrink: 0;
       }
       .text-container {
-        padding: 1rem 0;
-        margin-right: 1.2rem;
+        background-color: $background-color-light;
+        box-shadow: 0.1rem 0.1rem 0.2rem 0.15rem rgba(0, 0, 0, 0.26);
+
+        // margin-right: 1.2rem;
+        padding: 0.8rem 1rem;
+        border-radius: $border-radius + 0.3rem;
 
         flex: auto;
-        height: 100%;
+        height: 95%;
         // border: $border;
         @include flex-box(column);
         gap: 0.4rem;
         font-size: 1.1rem;
+        // transition: background-color 0.2s ease-out;
+
         .type-box,
         .score-box {
           @include flex-box();
@@ -208,12 +264,12 @@ onMounted(() => {
             width: 20%;
             color: $primary-color;
             // font-size: 1.2rem;
+            transition: color 0.2s ease-out;
           }
           .value {
-            border: $border-text;
             padding: 0.2rem 0.5rem;
-            border-radius: 0.5rem;
-            color: $primary-color-dark;
+            color: $text-color;
+            transition: color 0.2s ease-out;
           }
         }
         .desc-box {
@@ -224,19 +280,24 @@ onMounted(() => {
           .title {
             font-weight: $font-weight-bold;
             color: $primary-color;
+            transition: color 0.2s ease-out;
             // font-size: 1.2rem;
           }
           .value {
-            color: $primary-color-dark;
+            color: $text-color;
             border: $border-text;
+
+            border-radius: 0.5rem;
             padding: 0.5rem;
             flex-grow: 1;
+            transition: color 0.2s ease-out;
           }
         }
         .btn {
           background-color: $primary-color;
           border: none;
-          color: $background-color;
+          color: $secondary-color;
+          font-weight: $font-weight-bold;
           padding: 0.3rem;
           cursor: pointer;
           transition: all 0.2s ease-out;
@@ -244,7 +305,17 @@ onMounted(() => {
           &:hover,
           &:active {
             background-color: $primary-color-dark;
-            color: #fff;
+            color: $background-color;
+          }
+        }
+      }
+      &.isSelected {
+        box-shadow: inset 0.5rem 0.3rem 0.8rem -0.3rem rgba($primary-color, 0.5);
+        .text-container {
+          // box-shadow: none;
+          // border: $border;
+          .btn {
+            color: $third-color-light;
           }
         }
       }
@@ -275,6 +346,6 @@ onMounted(() => {
 .el-tag {
   --el-tag-bg-color: #{$primary-color};
   --el-tag-border-color: #{$border-color-text};
-  --el-tag-text-color: #{$background-color};
+  --el-tag-text-color: #{$background-color-dark};
 }
 </style>

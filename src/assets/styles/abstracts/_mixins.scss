@@ -9,10 +9,16 @@
   flex-direction: $direction;
 }
 
-@mixin icon-style($size: $icon-size-regular, $color: $icon-color-gray) {
+@mixin icon-style($size: $icon-size-regular, $color: $primary-color) {
   width: $size;
   height: $size;
   fill: $color;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+  &:hover {
+    background-color: $color;
+    fill: #fff;
+  }
 }
 
 @mixin router-animation() {
