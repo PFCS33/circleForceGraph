@@ -531,8 +531,10 @@ class ForceGraph {
             .on("click", function () {
               const topG = d3.select(this.parentNode.parentNode.parentNode);
               const data = topG.datum();
-              // emit emplty node, clear focus status
+              // emit empty node, clear focus status
               self.emit("node-click", null);
+              // emit empty node, clear question status
+              self.emit("question-click", null);
               // reset fixed status of node, if it was fixed
               const vlContainer = topG.selectChild(".vl-container");
               if (data.hasPinned) {
@@ -576,7 +578,7 @@ class ForceGraph {
               // emit question click event
               self.emit("question-click", {
                 id: data.id,
-                element: topG,
+                element: topG.selectChild(".vl-container"),
               });
             });
 

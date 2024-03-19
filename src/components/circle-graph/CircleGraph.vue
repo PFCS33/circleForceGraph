@@ -93,15 +93,6 @@ const nodeData = props.graphData.node;
 const linkData = props.graphData.link;
 
 /* -------------------------------------------------------------------------- */
-// question related
-/* -------------------------------------------------------------------------- */
-const showQsBar = ref(false);
-const showQuestionBar = (paylaod) => {
-  // TODO: pop up
-  showQsBar.value = true;
-};
-
-/* -------------------------------------------------------------------------- */
 // panel related
 /* -------------------------------------------------------------------------- */
 // control whether to hide icon (detail icon related)
@@ -111,23 +102,88 @@ const hidePanel = () => {
 };
 const cancleHide = () => {
   hasHide.value = false;
+  if (!showPanel.value) {
+    showPanel.value = true;
+  }
 };
 // control whether panel was shown
 const showPanel = ref(false);
 const toggleShowPanel = () => {
-  if (showPanel.value) {
+  if (hasHide.value) {
+    // if mode === hide, do not set showPanel immediately, delay it till cancleHide event
     showPanel.value = false;
+    hasHide.value = false;
     nextTick(() => {
       setTimeout(() => {
-        showPanel.value = true;
+        // showPanel.value = true
+        hasHide.value = true;
       }, 150);
     });
   } else {
-    showPanel.value = true;
+    if (showPanel.value) {
+      showPanel.value = false;
+      nextTick(() => {
+        setTimeout(() => {
+          showPanel.value = true;
+        }, 150);
+      });
+    } else {
+      // start point, hasHide always false
+      showPanel.value = true;
+    }
   }
 };
 const closeShowPanel = () => {
   showPanel.value = false;
+};
+
+/* -------------------------------------------------------------------------- */
+// question related
+/* -------------------------------------------------------------------------- */
+const showQsBar = ref(false);
+const questionNode = ref(null);
+const questionId = ref(null);
+watch(questionNode, (newVal, oldVal) => {
+  // cancle old node's css
+  // only if node change, else persist
+  if (!newVal || (oldVal && newVal.id != oldVal.id)) {
+    toggleQuestionCSS(oldVal, false);
+    if (!newVal) {
+      closeQsBar();
+    }
+  }
+  // set new node's css
+  // only if node change
+  if (!oldVal || (newVal && newVal.id != oldVal.id)) {
+    toggleQuestionCSS(newVal, true);
+    // set question id
+    questionId.value = newVal.id;
+    // switch qsBar status
+    toggleShowQsBar();
+  }
+});
+const toggleShowQsBar = () => {
+  if (showQsBar.value) {
+    showQsBar.value = false;
+    nextTick(() => {
+      setTimeout(() => {
+        showQsBar.value = true;
+      }, 150);
+    });
+  } else {
+    showQsBar.value = true;
+  }
+};
+const toggleQuestionCSS = (data, isQuestion) => {
+  const element = data.element;
+  element.classed("has-question", isQuestion);
+};
+const closeQsBar = () => {
+  showQsBar.value = false;
+};
+const setQuestionNode = (paylaod) => {
+  questionNode.value = paylaod;
+  // showQsBar.value = true;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -143,6 +199,8 @@ watch(focusNode, (newVal, oldVal) => {
     toggleFocusCSS(oldVal, false);
     if (!newVal) {
       closeShowPanel();
+      // make sure at the beginning, hasHide always false
+      hasHide.value = false;
     }
   }
   // set new node's css
@@ -169,7 +227,7 @@ const setFocusNode = (data) => {
 onMounted(() => {
   const forceGraph = new ForceGraph("#svg-container", nodeData, linkData);
   forceGraph.on("node-click", setFocusNode);
-  forceGraph.on("question-click", showQuestionBar);
+  forceGraph.on("question-click", setQuestionNode);
   forceGraph.createForceGraph();
 });
 
@@ -236,6 +294,10 @@ onUnmounted(() => {
         transition: fill 0.2s ease-out;
         &:hover {
           fill: $primary-color;
+
+          &.question {
+            fill: $third-color;
+          }
         }
       }
     }
@@ -249,6 +311,11 @@ onUnmounted(() => {
         stroke-width: $border-width-focus;
 
         stroke: $primary-color;
+      }
+    }
+    &.has-question {
+      .vl-icon.question {
+        fill: $third-color;
       }
     }
     &.has-pinned {

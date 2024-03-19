@@ -1,14 +1,25 @@
 <template>
-  <div class="qbar-container"></div>
+  <div class="qbar-container">
+    <div class="qbar"></div>
+  </div>
 </template>
 <script setup></script>
 
 <style lang="scss" scoped>
 .qbar-container {
-  border: $border;
-  height: 5rem;
+  // border: $border;
+  // height: 5rem;
   width: 100%;
   z-index: $z-middle;
-  background-color: #fff;
+
+  @include flex-box();
+  justify-content: center;
+
+  .qbar {
+    height: 5rem;
+    width: 60%;
+    border: $border;
+    background-color: #fff;
+  }
 }
 </style>
