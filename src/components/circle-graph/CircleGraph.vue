@@ -20,7 +20,7 @@
     <transition name="pop">
       <QuestionBar
         class="qsbar"
-        v-show="showQsBar"
+        v-if="showQsBar"
         @close="setQuestionNode(null)"
       >
       </QuestionBar>

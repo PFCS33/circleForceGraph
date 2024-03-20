@@ -222,6 +222,7 @@ onMounted(() => {
       align-items: center;
       border-bottom: $border;
       padding-right: 1.2rem;
+      padding-left: 0.5rem;
       transition: all 0.2s ease-out;
       // border-color: $primary-color;
       &:first-child {
@@ -314,7 +315,7 @@ onMounted(() => {
       }
       &.isSelected {
         box-shadow: inset 0.5rem 0.3rem 0.8rem -0.3rem rgba($primary-color, 0.5);
-
+        background-color: rgba($primary-color, 0.1);
         .text-container {
           .btn {
             color: $third-color-light;
