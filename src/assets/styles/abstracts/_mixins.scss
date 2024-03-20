@@ -21,6 +21,42 @@
   }
 }
 
+@mixin fancier-scroll-bar() {
+  /* This targets the scrollbar in Webkit browsers */
+  &::-webkit-scrollbar {
+    width: 5px; /* Change this value to adjust the width */
+    height: 5px; /* Adjust height for horizontal scrollbars, if necessary */
+    border-radius: 5px;
+  }
+
+  /* Optional: style the scrollbar track (background) */
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Track color */
+  }
+
+  /* Optional: style the scrollbar handle */
+  &::-webkit-scrollbar-thumb {
+    background: #888; /* Handle color */
+  }
+
+  /* Optional: style the scrollbar handle on hover */
+  &::-webkit-scrollbar-thumb:hover {
+    background: #555; /* Handle color on hover */
+  }
+}
+@mixin hide-scroll-bar() {
+  /* This applies to Chrome, Safari, and newer Edge versions */
+  &::-webkit-scrollbar {
+    display: none; /* Hides the scrollbar in Webkit-based browsers */
+  }
+  /* This applies to Firefox */
+  scrollbar-width: none; /* This will hide the scrollbar in Firefox */
+  /* This applies to Internet Explorer and older Edge versions */
+  -ms-overflow-style: none; /* This will hide scrollbars in IE and Edge */
+  /* General styles for the element */
+  overflow: auto; /* Enables scrolling even when scrollbars are hidden */
+}
+
 @mixin router-animation() {
   .route-enter-from {
     opacity: 0;
@@ -97,11 +133,11 @@
 }
 @mixin pop-animation() {
   .pop-enter-active {
-    transition: all 70ms ease-out;
+    transition: all 100ms ease-out;
   }
 
   .pop-leave-active {
-    transition: all 70ms ease-in;
+    transition: all 100ms ease-in;
   }
 
   .pop-enter-from,

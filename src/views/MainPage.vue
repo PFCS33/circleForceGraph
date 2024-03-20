@@ -80,7 +80,7 @@ onMounted(async () => {
     stroke: $primary-color;
   }
   .el-loading-text {
-    color: $text-color-2nd;
+    color: $text-color-light;
   }
 }
 </style>

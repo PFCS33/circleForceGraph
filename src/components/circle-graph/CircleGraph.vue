@@ -18,7 +18,12 @@
       ></InfoPanel>
     </transition>
     <transition name="pop">
-      <QuestionBar class="qsbar" v-show="showQsBar"> </QuestionBar>
+      <QuestionBar
+        class="qsbar"
+        v-show="showQsBar"
+        @close="setQuestionNode(null)"
+      >
+      </QuestionBar>
     </transition>
     <svg id="svg-container">
       <defs>
@@ -147,6 +152,7 @@ watch(questionNode, (newVal, oldVal) => {
   // cancle old node's css
   // only if node change, else persist
   if (!newVal || (oldVal && newVal.id != oldVal.id)) {
+    console.log(111);
     toggleQuestionCSS(oldVal, false);
     if (!newVal) {
       closeQsBar();

@@ -271,7 +271,7 @@ onMounted(() => {
           }
           .value {
             padding: 0.2rem 0.5rem;
-            color: $text-color;
+            color: rgba($text-color, 0.8);
             transition: color 0.2s ease-out;
           }
         }
@@ -287,7 +287,7 @@ onMounted(() => {
             // font-size: 1.2rem;
           }
           .value {
-            color: $text-color;
+            color: rgba($text-color, 0.8);
             border: $border-text;
 
             border-radius: 0.5rem;
