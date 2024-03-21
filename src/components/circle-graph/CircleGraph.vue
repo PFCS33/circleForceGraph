@@ -13,7 +13,7 @@
         class="panel"
         v-if="showPanel"
         v-show="!hasHide"
-        :id="panelId"
+        :id="panelNode.id"
         @hide="hidePanel"
       ></InfoPanel>
     </transition>
@@ -21,7 +21,12 @@
       <QuestionBar
         class="qsbar"
         v-if="showQsBar"
-        @close="setQuestionNode(null)"
+        @close="
+          setQuestionEmitNode({
+            id: questionNode.id,
+            element: null,
+          })
+        "
       >
       </QuestionBar>
     </transition>
@@ -83,7 +88,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, nextTick, onUnmounted } from "vue";
+import { onMounted, ref, reactive, watch, nextTick, onUnmounted } from "vue";
 import { ForceGraph } from "@/utils/graphGenerator.js";
 import InfoPanel from "@/components/scope-panel/InfoPanel.vue";
 import QuestionBar from "@/components/question-bar/QuestionBar.vue";
@@ -146,26 +151,36 @@ const closeShowPanel = () => {
 // question related
 /* -------------------------------------------------------------------------- */
 const showQsBar = ref(false);
-const questionNode = ref(null);
-const questionId = ref(null);
-watch(questionNode, (newVal, oldVal) => {
-  // cancle old node's css
-  // only if node change, else persist
-  if (!newVal || (oldVal && newVal.id != oldVal.id)) {
-    console.log(111);
-    toggleQuestionCSS(oldVal, false);
-    if (!newVal) {
+const questionEmitNode = reactive({
+  id: -1,
+  element: null,
+});
+const questionNode = reactive({
+  id: -1,
+  element: null,
+});
+watch(questionEmitNode, (newVal) => {
+  if (!newVal.element) {
+    if (newVal.id === questionNode.id) {
+      toggleQuestionCSS(questionNode, false);
       closeQsBar();
+      myTool.reactiveAssign(
+        {
+          id: -1,
+          element: null,
+        },
+        questionNode
+      );
     }
-  }
-  // set new node's css
-  // only if node change
-  if (!oldVal || (newVal && newVal.id != oldVal.id)) {
-    toggleQuestionCSS(newVal, true);
-    // set question id
-    questionId.value = newVal.id;
-    // switch qsBar status
-    toggleShowQsBar();
+  } else {
+    if (newVal.id !== questionNode.id) {
+      if (questionNode.element) {
+        toggleQuestionCSS(questionNode, false);
+      }
+      toggleQuestionCSS(newVal, true);
+      myTool.reactiveAssign(newVal, questionNode);
+      toggleShowQsBar();
+    }
   }
 });
 const toggleShowQsBar = () => {
@@ -187,36 +202,56 @@ const toggleQuestionCSS = (data, isQuestion) => {
 const closeQsBar = () => {
   showQsBar.value = false;
 };
-const setQuestionNode = (paylaod) => {
-  questionNode.value = paylaod;
-  // showQsBar.value = true;
+const setQuestionEmitNode = (paylaod) => {
+  myTool.reactiveAssign(paylaod, questionEmitNode);
 };
 
 /* -------------------------------------------------------------------------- */
 // focus node related
 /* -------------------------------------------------------------------------- */
-const focusNode = ref(null);
-const panelId = ref(null);
+// node that child component emits
+const focusEmitNode = reactive({
+  id: -1,
+  element: null,
+});
+// 'real' focus node
+const panelNode = reactive({
+  id: -1,
+  element: null,
+});
 // watch to set css of new & old node
-watch(focusNode, (newVal, oldVal) => {
-  // cancle old node's css
-  // only if node change, else persist
-  if (!newVal || (oldVal && newVal.id != oldVal.id)) {
-    toggleFocusCSS(oldVal, false);
-    if (!newVal) {
+watch(focusEmitNode, (newVal) => {
+  // first, check whether empty node was emitted
+  if (!newVal.element) {
+    // if newNode is empty, check whether it is current panelNode
+    if (newVal.id === panelNode.id) {
+      toggleFocusCSS(panelNode, false);
       closeShowPanel();
       // make sure at the beginning, hasHide always false
       hasHide.value = false;
+      // clear panelNode
+      myTool.reactiveAssign(
+        {
+          id: -1,
+          element: null,
+        },
+        panelNode
+      );
     }
-  }
-  // set new node's css
-  // only if node change
-  if (!oldVal || (newVal && newVal.id != oldVal.id)) {
-    toggleFocusCSS(newVal, true);
-    // set panel id
-    panelId.value = newVal.id;
-    // switch panel status
-    toggleShowPanel();
+  } else {
+    // check whether oldNode element exit and whether focus node was change, if was, cancel its css
+    if (newVal.id != panelNode.id) {
+      if (panelNode.element) {
+        // hanlde old node
+        toggleFocusCSS(panelNode, false);
+      }
+      // set new node
+      toggleFocusCSS(newVal, true);
+      // set panel node
+      myTool.reactiveAssign(newVal, panelNode);
+      // switch panel status
+      toggleShowPanel();
+    }
   }
 });
 const toggleFocusCSS = (data, isHilight) => {
@@ -224,21 +259,21 @@ const toggleFocusCSS = (data, isHilight) => {
   element.classed("has-focus", isHilight);
 };
 // call back function of event listener
-const setFocusNode = (data) => {
-  focusNode.value = data;
+const setFocusEmitNode = (data) => {
+  myTool.reactiveAssign(data, focusEmitNode);
 };
 /* -------------------------------------------------------------------------- */
 // life cycle hooks
 /* -------------------------------------------------------------------------- */
 onMounted(() => {
   const forceGraph = new ForceGraph("#svg-container", nodeData, linkData);
-  forceGraph.on("node-click", setFocusNode);
-  forceGraph.on("question-click", setQuestionNode);
+  forceGraph.on("node-click", setFocusEmitNode);
+  forceGraph.on("question-click", setQuestionEmitNode);
   forceGraph.createForceGraph();
 });
 
 onUnmounted(() => {
-  forceGraph.off("node-click", setFocusNode);
+  forceGraph.off("node-click", setFocusEmitNode);
   forceGraph.off("question-click", showQuestionBar);
 });
 </script>
