@@ -38,20 +38,25 @@ function fetchData(url) {
 }
 
 // Post
-async function postData(url, data = {}) {
-  try {
-    const response = await fetch(url, {
+function postData(url, data = {}) {
+  return new Promise((resolve, reject) => {
+    fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
-    });
-    const returnData = await response.json();
-    return returnData;
-  } catch (error) {
-    throw error;
-  }
+    })
+      .then((res) => {
+        return res.json();
+      })
+      .then((data) => {
+        resolve(data);
+      })
+      .catch((e) => {
+        throw e;
+      });
+  });
 }
 
 export { baseUrl, fetchData, postData };

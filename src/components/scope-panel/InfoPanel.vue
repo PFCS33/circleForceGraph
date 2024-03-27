@@ -336,16 +336,6 @@ onMounted(() => {
 </style>
 
 <style lang="scss">
-.pagination {
-  --el-color-primary: #{$primary-color};
-  --el-text-color-primary: #{$text-color-muted};
-
-  .el-pager {
-    justify-content: center;
-
-    flex: 0.8;
-  }
-}
 .el-tag {
   --el-tag-bg-color: #{$primary-color};
   --el-tag-border-color: #{$border-color-text};

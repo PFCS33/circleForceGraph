@@ -58,7 +58,7 @@ onMounted(() => {
   @include container-base();
   @include flex-box(column);
   max-height: 100%;
-  gap: 0.5rem;
+  // gap: 0.5rem;
 
   .nav-bar {
     flex: auto;
@@ -81,8 +81,7 @@ onMounted(() => {
     width: 100%;
     display: flex;
     .filter-box {
-      width: 45%;
-      border: $border;
+      width: 50%;
     }
     .graph-box {
       flex: auto;
@@ -96,6 +95,7 @@ onMounted(() => {
 .el-loading-mask {
   z-index: $z-top;
   --el-color-primary: $primary-color;
+  --el-mask-color: #{rgba($background-color-light, 0.6)};
   .el-loading-spinner {
     stroke: $primary-color;
   }
