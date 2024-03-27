@@ -1,12 +1,14 @@
 import { baseUrl, fetchData } from "@/utils/api";
 
 export default {
-  namespaced: true,
   state() {
     return {
-      //   drawData: null,
+      // data directly from server
       rawData: null,
+      // data for drawing circleGraph
       graphData: null,
+      // columns' name
+      colInfoMap: null,
     };
   },
   getters: {
@@ -16,6 +18,9 @@ export default {
     graphData(state) {
       return state.graphData;
     },
+    colInfoMap(state) {
+      return state.colInfoMap;
+    },
   },
   mutations: {
     setRawData(state, payload) {
@@ -23,6 +28,9 @@ export default {
     },
     setGraphData(state, payload) {
       state.graphData = payload;
+    },
+    setColInfoMap(state, payload) {
+      state.colInfoMap = payload;
     },
   },
   actions: {
@@ -44,8 +52,20 @@ export default {
     },
     processRawData(context, payload) {
       // set graph data
-      context.commit("setGraphData", payload);
-      // contruct tree struture based on raw data
+      context.commit("setGraphData", {
+        node: payload.node,
+        link: payload.link,
+      });
+      // set column info
+      const colRawData = payload.columnInfo;
+      const colInfoMap = new Map();
+      for (const prop in colRawData) {
+        if (Object.hasOwn(colRawData, prop)) {
+          colInfoMap.set(prop, colRawData[prop]);
+        }
+      }
+      context.commit("setColInfoMap", colInfoMap);
+      // TODO: contruct tree struture based on raw data
     },
 
     // abandoned way: async-await

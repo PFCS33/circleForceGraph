@@ -8,11 +8,12 @@
       <div class="brand">Exploration</div>
     </div>
     <div class="content-box">
-      <CircleGraph
-        class="graph"
-        v-if="hasGetData"
-        :graphData="graphData"
-      ></CircleGraph>
+      <div class="filter-box">
+        <FilterPanel></FilterPanel>
+      </div>
+      <div class="graph-box">
+        <CircleGraph v-if="hasGetData" :graphData="graphData"></CircleGraph>
+      </div>
     </div>
   </div>
 </template>
@@ -20,11 +21,12 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { useStore } from "vuex";
 import CircleGraph from "@/components/circle-graph/CircleGraph.vue";
+import FilterPanel from "@/components/filter-panel/FilterPanel.vue";
 
 const store = useStore();
 
 // data for creatring force graph
-const graphData = computed(() => store.getters["tree/graphData"]);
+const graphData = computed(() => store.getters["graphData"]);
 // control timing of creating force graph component
 const isLoading = ref(true);
 const hasGetData = ref(false);
@@ -41,7 +43,7 @@ watch(graphData, (newVal) => {
 onMounted(() => {
   // load data
   store
-    .dispatch("tree/initRawData", null)
+    .dispatch("initRawData", null)
     .then((res) => {
       ElMessage.success(res.message);
     })
@@ -75,8 +77,16 @@ onMounted(() => {
   }
 
   .content-box {
-    max-height: 95%;
+    height: 95%;
     width: 100%;
+    display: flex;
+    .filter-box {
+      width: 45%;
+      border: $border;
+    }
+    .graph-box {
+      flex: auto;
+    }
   }
 }
 </style>
