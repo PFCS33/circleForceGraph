@@ -17,27 +17,37 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
+import { useStore } from "vuex";
 import CircleGraph from "@/components/circle-graph/CircleGraph.vue";
 
-import { baseUrl, fetchData } from "@/utils/api";
+const store = useStore();
 
-const graphData = ref(null);
+// data for creatring force graph
+const graphData = computed(() => store.getters["tree/graphData"]);
+// control timing of creating force graph component
 const isLoading = ref(true);
 const hasGetData = ref(false);
-
-onMounted(async () => {
-  // fetch data from server
-  try {
-    graphData.value = await fetchData(baseUrl + "/graph/data");
+watch(graphData, (newVal) => {
+  if (newVal) {
     hasGetData.value = true;
-
-    ElMessage.success(`Calculation complete`);
-  } catch (e) {
-    ElMessage.error(`Graph Error: ${e.message}`);
-  } finally {
     isLoading.value = false;
+  } else {
+    ElMessage.error(`Graph Data NULL Error`);
   }
+});
+
+// starter
+onMounted(() => {
+  // load data
+  store
+    .dispatch("tree/initRawData", null)
+    .then((res) => {
+      ElMessage.success(res.message);
+    })
+    .catch((e) => {
+      ElMessage.error(`Data Loading Error: ${e.message}`);
+    });
 });
 </script>
 
