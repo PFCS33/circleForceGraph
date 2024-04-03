@@ -63,12 +63,12 @@ onMounted(() => {
   .nav-bar {
     flex: auto;
     width: 100%;
-    box-shadow: 0rem 0.1rem 0.2rem 0rem rgba(0, 0, 0, 0.2);
+    box-shadow: 0rem 0.2rem 0.3rem 0rem rgba(0, 0, 0, 0.2);
     z-index: $z-top;
-
     @include flex-box(column);
     justify-content: center;
     padding-left: 1rem;
+    // background-color: $primary-color;
     .brand {
       font-size: 2rem;
       font-weight: bold;
@@ -81,7 +81,7 @@ onMounted(() => {
     width: 100%;
     display: flex;
     .filter-box {
-      width: 50%;
+      width: 32%;
     }
     .graph-box {
       flex: auto;

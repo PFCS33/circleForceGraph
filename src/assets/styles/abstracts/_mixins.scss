@@ -110,7 +110,7 @@
   }
 }
 
-@mixin slide-animation() {
+@mixin slide-animation($direction: 1) {
   .slide-enter-active {
     transition: all 70ms ease-out;
   }
@@ -121,7 +121,7 @@
 
   .slide-enter-from,
   .slide-leave-to {
-    transform: translateX(20rem);
+    transform: translateX(calc($direction * 20rem));
     visibility: hidden;
   }
 

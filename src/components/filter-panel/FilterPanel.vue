@@ -37,20 +37,36 @@
       element-loading-text="Fetching data..."
     >
       <div class="insight-list-border" v-show="!isLoadingPost">
-        <div class="insight-border" v-for="insightData in currentPageData">
-          <div class="vl-container" ref="vlContainers"></div>
-          <div class="text-container">
-            <div class="type-box">
-              <span class="title">Type</span>
-              <span class="value">{{ insightData.type }}</span>
-            </div>
-            <div class="score-box">
-              <span class="title">Score</span>
-              <span class="value">{{ insightData.score }}</span>
-            </div>
-            <div class="desc-box">
+        <div
+          class="wrapper"
+          :key="insightData.id"
+          v-for="insightData in currentPageData"
+        >
+          <transition name="slide">
+            <div class="desc-container" v-show="insightData.isDescVisible">
               <div class="title">Description</div>
               <div class="value">{{ insightData.description }}</div>
+            </div>
+          </transition>
+          <div class="insight-border">
+            <div class="text-container">
+              <div class="type-box">
+                <span class="title">Type</span>
+                <span class="value">{{ insightData.type }}</span>
+              </div>
+              <div class="score-box">
+                <span class="title">Score</span>
+                <span class="value">{{ insightData.score }}</span>
+              </div>
+            </div>
+            <div class="vl-container" ref="vlContainers"></div>
+            <div class="btn-box">
+              <SvgIcon iconName="add-outline" class="icon"></SvgIcon>
+              <SvgIcon
+                class="icon"
+                iconName="more"
+                @click="toggleShowDesc($event, insightData)"
+              ></SvgIcon>
             </div>
           </div>
         </div>
@@ -74,6 +90,7 @@ import { ref, reactive, computed, watch, nextTick } from "vue";
 import { useStore } from "vuex";
 import vegaEmbed from "vega-embed";
 import { baseUrl, postData } from "@/utils/api.js";
+import SvgIcon from "../ui/SvgIcon.vue";
 const store = useStore();
 
 // data loading flag
@@ -86,11 +103,23 @@ const insightList = ref(null);
 // communicate to server to get other insights in the same data scope
 const handlePostData = (data) => {
   // assign data to local value
-  insightList.value = data.insightList;
+  insightList.value = data.insightList.map((insight) => ({
+    ...insight,
+    isDescVisible: false,
+  }));
   // initilize first page's data
   currentPageData.value = getPageData(currentPageNumber.value);
   // show content
   isLoadingPost.value = false;
+};
+
+/* -------------------------------------------------------------------------- */
+// control show/not show of description box
+/* -------------------------------------------------------------------------- */
+
+const toggleShowDesc = (event, insightData) => {
+  const descBox = event.target.parentNode;
+  insightData.isDescVisible = !insightData.isDescVisible;
 };
 /* -------------------------------------------------------------------------- */
 // pagination related
@@ -112,8 +141,6 @@ const getPageData = (number) => {
 
 // draw vl-graph inside the panel
 const drawPanelVl = (container, data) => {
-  // reset container width
-  container.style("width", "60%");
   // get vl spec, and add config
   let vlSpec = JSON.parse(data["vega-lite"]);
   vlSpec.width = "container";
@@ -127,8 +154,6 @@ const drawPanelVl = (container, data) => {
     container.select("div").remove();
     container.select("details").remove();
     container.node().appendChild(canvas.node());
-    container.style("min-width", "55%");
-    container.style("width", "55%");
   });
 };
 
@@ -155,6 +180,7 @@ const colInfoMap = computed(() => {
   return store.getters["colInfoMap"];
 });
 const curValues = reactive({});
+
 watch(colInfoMap, (newVal) => {
   if (newVal) {
     // initialize binding values
@@ -170,10 +196,7 @@ watch(colInfoMap, (newVal) => {
 watch(curValues, (newVal) => {
   // everytime filter change. post scope to get new data
   isLoadingPost.value = true;
-  vlContainers.value.forEach((containerRef, index) => {
-    const vlContainer = d3.select(containerRef);
-    vlContainer.style("min-width", "63%").style("width", "63%");
-  });
+
   postData(baseUrl + "/filter/scope", {
     scope: newVal,
   })
@@ -226,9 +249,9 @@ watch(curValues, (newVal) => {
   }
 
   .insight-box {
-    width: 75%;
-    min-width: 75%;
-    background-color: rgba($primary-color, 0.05);
+    width: 65%;
+    min-width: 65%;
+
     border-right: $border;
     border-radius: $border-radius + 0.3rem;
     border-color: rgba($primary-color, 0.3);
@@ -239,99 +262,117 @@ watch(curValues, (newVal) => {
     .insight-list-border {
       flex: auto;
 
-      .insight-border {
+      .wrapper {
+        position: relative;
         width: 100%;
         height: 33.3%;
-        @include flex-box();
-        justify-content: stretch;
-        align-items: center;
-        border-bottom: $border;
-        border-color: rgba($primary-color, 0.3);
-        padding: 1rem 1.5rem;
-        padding-left: 0.5rem;
 
-        transition: all 0.2s ease-out;
-        // border-color: $primary-color;
-        // &:last-child {
-        //   border-bottom: none;
-        // }
-        &:hover {
-          box-shadow: 0rem 0.2rem 0.3rem 0.1rem rgba(#000, 0.26);
-          // background-color: $primary-color;
-        }
+        .desc-container {
+          position: absolute;
+          left: 102%;
+          top: 1%;
+          width: 15rem;
+          height: 99%;
 
-        .vl-container {
-          min-width: 63%;
-          height: 98%;
-          flex-shrink: 0;
-          svg {
-            // background-color: #fff;
-          }
-          // padding: 1rem;
-        }
-        .text-container {
-          background-color: $background-color-light;
-          box-shadow: 0.1rem 0.1rem 0.3rem 0.1rem rgba($primary-color, 0.4);
+          border: $border-text;
+          background-color: $primary-color-gray;
 
-          // margin-right: 1.2rem;
-          // margin: 0.8rem 0;
-          padding: 0.8rem 1rem;
-          border-radius: $border-radius + 0.3rem;
-
-          flex: auto;
-          height: 95%;
-          // border: $border;
           @include flex-box(column);
-          gap: 0.4rem;
-          font-size: 1.1rem;
-          // transition: background-color 0.2s ease-out;
+          gap: 0.6rem;
+          padding: 1rem 0.4rem;
+          z-index: $z-bottom;
 
-          .type-box,
-          .score-box {
+          .title {
+            font-weight: $font-weight-bold;
+            color: $primary-color;
+            // font-size: 1.2rem;
+          }
+          .value {
+            color: rgba($text-color, 0.8);
+            // border: $border-text;
+            // border-radius: 0.5rem;
+            // padding: 0.5rem;
+            flex-grow: 1;
+          }
+        }
+        .insight-border {
+          width: 100%;
+          height: 100%;
+
+          @include flex-box(column);
+          align-items: flex-start;
+          gap: 0.3rem;
+          // z-index: $z-middle;
+          background-color: $primary-color-gray;
+
+          border-bottom: $border;
+          border-color: rgba($primary-color, 0.3);
+          padding-top: 0.8rem;
+          padding-left: 1rem;
+          transition: all 0.2s ease-out;
+          position: relative;
+
+          &:hover {
+            box-shadow: 0rem 0.5rem 0.5rem 0rem rgba($primary-color, 0.26);
+            // background-color: $primary-color;
+            z-index: $z-middle;
+          }
+
+          .vl-container {
+            width: 100%;
+            height: 90%;
+            flex-shrink: 0;
+            svg {
+              // background-color: #fff;
+            }
+          }
+          .text-container {
+            // background-color: $background-color-light;
+            // box-shadow: 0.1rem 0.1rem 0.3rem 0.1rem rgba($primary-color, 0.4);
+            flex: auto;
+            width: 100%;
             @include flex-box();
             align-items: center;
+            // justify-content: space-evenly;
+            gap: 2rem;
+            font-size: 1.1rem;
 
-            .title {
-              font-weight: $font-weight-bold;
-              width: 20%;
-              color: $primary-color;
-              // font-size: 1.2rem;
-              transition: color 0.2s ease-out;
-            }
-            .value {
-              padding: 0.2rem 0.5rem;
-              color: rgba($text-color, 0.8);
-              transition: color 0.2s ease-out;
+            .type-box,
+            .score-box {
+              @include flex-box();
+              align-items: center;
+              gap: 0.5rem;
+              .title {
+                font-weight: $font-weight-bold;
+                color: $primary-color;
+                // transition: color 0.2s ease-out;
+              }
+              .value {
+                color: rgba($text-color, 0.8);
+                // transition: color 0.2s ease-out;
+              }
             }
           }
-          .desc-box {
-            flex-grow: 1;
+
+          .btn-box {
+            position: absolute;
+            right: 1%;
+            top: calc(50% - $icon-size-small - 0.2rem);
             @include flex-box(column);
-            gap: 0.5rem;
-
-            .title {
-              font-weight: $font-weight-bold;
-              color: $primary-color;
-              transition: color 0.2s ease-out;
-              // font-size: 1.2rem;
-            }
-            .value {
-              color: rgba($text-color, 0.8);
-              border: $border-text;
-
-              border-radius: 0.5rem;
-              padding: 0.5rem;
-              flex-grow: 1;
-              transition: color 0.2s ease-out;
+            gap: 0.4rem;
+            .icon {
+              @include icon-style($icon-size-small);
+              border-radius: $border-radius;
             }
           }
-        }
-        &.isSelected {
-          box-shadow: inset 0.5rem 0.3rem 0.8rem -0.3rem rgba($primary-color, 0.5);
-          background-color: rgba($primary-color, 0.1);
-          .text-container {
-            .btn {
-              color: $third-color-light;
+
+          &.isSelected {
+            box-shadow: inset 0.5rem 0.3rem 0.8rem -0.3rem rgba($primary-color, 0.5);
+            background-color: rgba($primary-color, 0.1);
+            .text-container {
+              .btn {
+                color: $third-color-light;
+              }
             }
           }
         }
@@ -348,7 +389,9 @@ watch(curValues, (newVal) => {
   }
 }
 </style>
-
+<style lang="scss" scoped>
+@include slide-animation(-1);
+</style>
 <style lang="scss">
 .pagination {
   --el-color-primary: #{$primary-color};
