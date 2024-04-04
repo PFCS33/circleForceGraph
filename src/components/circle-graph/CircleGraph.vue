@@ -21,6 +21,7 @@
       <QuestionBar
         class="qsbar"
         v-if="showQsBar"
+        :queryId="questionNode.id"
         @close="
           setQuestionEmitNode({
             id: questionNode.id,
@@ -88,19 +89,45 @@
 </template>
 
 <script setup>
-import { onMounted, ref, reactive, watch, nextTick, onUnmounted } from "vue";
+import {
+  onMounted,
+  ref,
+  reactive,
+  computed,
+  watch,
+  nextTick,
+  onUnmounted,
+} from "vue";
 import { ForceGraph } from "@/utils/graphGenerator.js";
 import InfoPanel from "@/components/scope-panel/InfoPanel.vue";
 import QuestionBar from "@/components/question-bar/QuestionBar.vue";
+import { useStore } from "vuex";
+/* -------------------------------------------------------------------------- */
+// get graphData from vuex
+/* -------------------------------------------------------------------------- */
+const store = useStore();
+let forceGraph = null;
+// data from vuex
+const graphData = computed(() => store.getters["graphData"]);
+watch(graphData, (newVal, oldVal) => {
+  if (newVal) {
+    const nodeData = newVal.node;
+    const linkData = newVal.link;
+    if (forceGraph === null) {
+      // initialization
+      forceGraph = new ForceGraph("#svg-container", nodeData, linkData);
+      forceGraph.on("node-click", setFocusEmitNode);
+      forceGraph.on("question-click", setQuestionEmitNode);
+      forceGraph.createForceGraph();
+    } else {
+      // TODO update graph data
 
-/* -------------------------------------------------------------------------- */
-// get props
-/* -------------------------------------------------------------------------- */
-const props = defineProps({
-  graphData: Object,
+      forceGraph.updateGraphData(newVal);
+    }
+  } else {
+    ElMessage.error(`Graph Data NULL Error`);
+  }
 });
-const nodeData = props.graphData.node;
-const linkData = props.graphData.link;
 
 /* -------------------------------------------------------------------------- */
 // panel related
@@ -265,12 +292,6 @@ const setFocusEmitNode = (data) => {
 /* -------------------------------------------------------------------------- */
 // life cycle hooks
 /* -------------------------------------------------------------------------- */
-onMounted(() => {
-  const forceGraph = new ForceGraph("#svg-container", nodeData, linkData);
-  forceGraph.on("node-click", setFocusEmitNode);
-  forceGraph.on("question-click", setQuestionEmitNode);
-  forceGraph.createForceGraph();
-});
 
 onUnmounted(() => {
   forceGraph.off("node-click", setFocusEmitNode);

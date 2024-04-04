@@ -63,7 +63,7 @@
             <div class="btn-box">
               <SvgIcon iconName="add-outline" class="icon"></SvgIcon>
               <SvgIcon
-                class="icon"
+                :class="['icon', { 'has-desc': insightData.isDescVisible }]"
                 iconName="more"
                 @click="toggleShowDesc($event, insightData)"
               ></SvgIcon>
@@ -275,11 +275,12 @@ watch(curValues, (newVal) => {
           height: 99%;
 
           border: $border-text;
+          border-radius: 0.3rem;
           background-color: $primary-color-gray;
 
           @include flex-box(column);
           gap: 0.6rem;
-          padding: 1rem 0.4rem;
+          padding: 0.6rem 0.4rem;
           z-index: $z-bottom;
 
           .title {
@@ -363,6 +364,11 @@ watch(curValues, (newVal) => {
             .icon {
               @include icon-style($icon-size-small);
               border-radius: $border-radius;
+
+              &.has-desc {
+                background-color: $primary-color;
+                fill: #fff;
+              }
             }
           }
 

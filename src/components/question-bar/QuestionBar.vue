@@ -9,7 +9,11 @@
         placeholder="Please input"
       >
       </el-input>
-      <SvgIcon iconName="send" class="icon send"></SvgIcon>
+      <SvgIcon
+        iconName="send"
+        class="icon send"
+        @click="sendQuestion"
+      ></SvgIcon>
     </div>
     <SvgIcon iconName="close" class="icon close" @click="closeBar"> </SvgIcon>
   </div>
@@ -17,6 +21,7 @@
 <script setup>
 import { ref } from "vue";
 import SvgIcon from "../ui/SvgIcon.vue";
+import { useStore } from "vuex";
 /* -------------------------------------------------------------------------- */
 // emit
 /* -------------------------------------------------------------------------- */
@@ -27,7 +32,24 @@ const closeBar = () => {
 /* -------------------------------------------------------------------------- */
 // question content
 /* -------------------------------------------------------------------------- */
+const store = useStore();
+const { queryId } = defineProps({
+  queryId: Number,
+});
 const content = ref(null);
+const sendQuestion = () => {
+  store
+    .dispatch("postQuestion", {
+      id: queryId,
+      content: content.value,
+    })
+    .then((res) => {
+      ElMessage.success(res.message);
+    })
+    .catch((e) => {
+      ElMessage.error(`Query Error: ${e.message}`);
+    });
+};
 </script>
 
 <style lang="scss" scoped>

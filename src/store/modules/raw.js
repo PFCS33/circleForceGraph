@@ -1,10 +1,11 @@
-import { baseUrl, fetchData } from "@/utils/api";
+import { baseUrl, fetchData, postData } from "@/utils/api";
+import { Tree } from "@/utils/tree";
 
 export default {
   state() {
     return {
-      // data directly from server
-      rawData: null,
+      // tree data for tracing user exploration statement
+      treeData: null,
       // data for drawing circleGraph
       graphData: null,
       // columns' name
@@ -12,8 +13,8 @@ export default {
     };
   },
   getters: {
-    rawData(state) {
-      return state.rawData;
+    treeData(state) {
+      return state.treeData;
     },
     graphData(state) {
       return state.graphData;
@@ -23,8 +24,8 @@ export default {
     },
   },
   mutations: {
-    setRawData(state, payload) {
-      state.rawData = payload;
+    setTreeData(state, paylaod) {
+      state.treeData = paylaod;
     },
     setGraphData(state, payload) {
       state.graphData = payload;
@@ -39,7 +40,6 @@ export default {
       return new Promise((resolve, reject) => {
         fetchData(baseUrl + "/graph/data")
           .then((rawData) => {
-            context.commit("setRawData", rawData);
             context.dispatch("processRawData", rawData);
             resolve({
               message: "Calculation complete.",
@@ -50,13 +50,31 @@ export default {
           });
       });
     },
-    processRawData(context, payload) {
-      // set graph data
-      context.commit("setGraphData", {
-        node: payload.node,
-        link: payload.link,
+    // post quesition and then add nodes in tree
+    postQuestion(context, payload) {
+      return new Promise((resolve, reject) => {
+        postData(baseUrl + "/question/data", payload)
+          .then((data) => {
+            const newNodeInfo = data.node;
+            context.dispatch("addTreeNode", {
+              parent: payload.id,
+              children: newNodeInfo,
+            });
+
+            // update graph data
+            context.dispatch("updateGraphDataByTree", newNodeInfo);
+            resolve({
+              message: "Query complete.",
+            });
+          })
+          .catch((error) => {
+            reject(error);
+          });
       });
-      // set column info
+    },
+    // initialization of all states data
+    processRawData(context, payload) {
+      // set column info, for filter panel
       const colRawData = payload.columnInfo;
       const colInfoMap = new Map();
       for (const prop in colRawData) {
@@ -65,21 +83,65 @@ export default {
         }
       }
       context.commit("setColInfoMap", colInfoMap);
-      // TODO: contruct tree struture based on raw data
+      // construct tree
+      const tree = new Tree();
+      context.commit("setTreeData", tree);
+      // add node into tree
+      const newNodeInfo = payload.node;
+      context.dispatch("addTreeNode", {
+        parent: 0,
+        children: newNodeInfo,
+      });
+      // update graph data
+      context.dispatch("updateGraphDataByTree", newNodeInfo);
     },
 
-    // abandoned way: async-await
-    // async _initRawData(context, paylaod) {
-    //   // fetch data from server
-    //   try {
-    //     const rawData = await fetchData(baseUrl + "/graph/data");
-    //     context.dispatch("processRawData", rawData);
-    //     ElMessage.success(`Calculation complete`);
-    //     context.commit("setRawData", rawData);
-    //     // construct tree structure based on raw data
-    //   } catch (e) {
-    //     ElMessage.error(`Graph Error: ${e.message}`);
-    //   }
-    // },
+    /*
+      add nodes into tree
+      payload: {
+        parent: id
+        children: nodes's id from backend severs
+      }
+    */
+    addTreeNode(context, payload) {
+      const tree = context.getters["treeData"];
+      tree.addNodes(
+        payload.parent,
+        payload.children.map((d) => ({
+          id: d.id,
+        }))
+      );
+    },
+
+    /*
+     * calways happens after change of tree data
+     * construct new link & node data for graph
+     * payload: new node info
+     */
+    updateGraphDataByTree(context, paylaod) {
+      // get nodes' layer info & links from tree
+      const tree = context.getters["treeData"];
+      const layerInfo = tree.getDescendantList();
+      const links = tree.getLinkList();
+      // get map for new node info
+      const newNodeMap = new Map();
+      paylaod.forEach((node) => {
+        newNodeMap.set(node.id, node);
+      });
+      // constructed new nodes
+      const newNodes = layerInfo.map((item) => {
+        const nodeInfo = newNodeMap.get(item.id);
+        if (nodeInfo) {
+          return { ...nodeInfo, layer: item.layer };
+        } else {
+          return { ...item };
+        }
+      });
+      // set graph data
+      context.commit("setGraphData", {
+        node: newNodes,
+        link: links,
+      });
+    },
   },
 };

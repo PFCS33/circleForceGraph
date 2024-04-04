@@ -54,7 +54,7 @@ function postData(url, data = {}) {
         resolve(data);
       })
       .catch((e) => {
-        throw e;
+        reject(e);
       });
   });
 }

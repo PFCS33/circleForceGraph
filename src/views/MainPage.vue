@@ -2,6 +2,7 @@
   <div
     class="container"
     v-loading="isLoading"
+    element-loading-custom-class="main"
     element-loading-text="Computing..."
   >
     <div class="nav-bar">
@@ -12,7 +13,7 @@
         <FilterPanel></FilterPanel>
       </div>
       <div class="graph-box">
-        <CircleGraph v-if="hasGetData" :graphData="graphData"></CircleGraph>
+        <CircleGraph></CircleGraph>
       </div>
     </div>
   </div>
@@ -24,27 +25,17 @@ import CircleGraph from "@/components/circle-graph/CircleGraph.vue";
 import FilterPanel from "@/components/filter-panel/FilterPanel.vue";
 
 const store = useStore();
-
-// data for creatring force graph
-const graphData = computed(() => store.getters["graphData"]);
 // control timing of creating force graph component
 const isLoading = ref(true);
 const hasGetData = ref(false);
-watch(graphData, (newVal) => {
-  if (newVal) {
-    hasGetData.value = true;
-    isLoading.value = false;
-  } else {
-    ElMessage.error(`Graph Data NULL Error`);
-  }
-});
-
 // starter
 onMounted(() => {
   // load data
   store
     .dispatch("initRawData", null)
     .then((res) => {
+      isLoading.value = false;
+
       ElMessage.success(res.message);
     })
     .catch((e) => {
@@ -101,6 +92,10 @@ onMounted(() => {
   }
   .el-loading-text {
     color: $text-color-light;
+  }
+
+  &.main {
+    --el-mask-color: #{rgba($background-color-light, 0.9)};
   }
 }
 </style>

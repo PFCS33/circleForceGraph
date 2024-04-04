@@ -5,33 +5,23 @@ class ForceGraph {
     // viewbox of container svg
     this.containerViewWidth = 1920;
     this.containerViewHeight = 1080;
-    // node & link data for controling force graph
-    // add config variables into origin data
-    this.nodeData = nodeData.map((d) => ({
-      ...d,
-      showVL: false,
-      hasPinned: false,
-      vlConfig: null, // {view, border(w/h/r), img(w/h)}
-    }));
-    this.linkData = linkData.map((d) => ({
-      ...d,
-    }));
-
-    // set attr of svg container
     // create id map for nodes & links data
     this.nodeIdMap = new Map();
     this.linkIdMap = new Map();
-    this.nodeData.forEach((node) => {
-      this.nodeIdMap.set(node.id, node);
-    });
-    this.linkData.forEach((link) => {
-      this.linkIdMap.set(`${link.source}_${link.target}`, link);
-    });
+    // node & link data for controling force graph
+    // add config variables into origin data
+    this.nodeData = this.constructNodeData(nodeData);
+    this.linkData = linkData.map((d) => ({
+      ...d,
+    }));
+    // set id-maps
+    this.resetIdMap();
+    // set max layer
+    this.maxLayer = this.getMaxLayer();
     // other variables' initialization
     this.svgContainer = this.setSvgContainer(containerId);
     this.simulation = null;
     // set initial value of max_layer
-    this.maxLayer = d3.max(this.nodeData, (d) => d.layer);
     // set event listeners, to reate with .vue file
     this.eventListeners = {};
     // other defalt configs
@@ -76,19 +66,9 @@ class ForceGraph {
       bgCircleWidth: 2.5,
     };
   }
-
-  /* set attr of svg_container
-   * return its d3_ref */
-  setSvgContainer(containerId) {
-    const svgContainer = d3.select(containerId);
-    const containerViewWidth = this.containerViewWidth;
-    const containerViewHeight = this.containerViewHeight;
-    svgContainer
-      .attr("viewBox", [0, 0, containerViewWidth, containerViewHeight])
-      .attr("preserveAspectRatio", "xMidYMid slice");
-    return svgContainer;
-  }
-
+  /* -------------------------------------------------------------------------- */
+  // initializer
+  /* -------------------------------------------------------------------------- */
   /* draw force graph within a svg_container */
   createForceGraph(options = {}) {
     const self = this;
@@ -103,10 +83,17 @@ class ForceGraph {
     const bgTopG = svgContainer.append("g").attr("class", "topg-bg");
     const linkTopG = svgContainer.append("g").attr("class", "topg-link");
     const nodeTopG = svgContainer.append("g").attr("class", "topg-node");
+    // create force
+    this.simulation = this.createSimulation(tick, config);
+    // create drag & zoom
+    this.dragDefine = this.createDrag(this.simulation, nodeTopG);
+    this.createZoom(this.simulation);
+
     // update dom by node & link data
     this.updateDomByData();
-    // create force
-    const tick = function () {
+
+    // tick function
+    function tick() {
       const nodeGs = nodeTopG.selectChildren("g");
       const linkGs = linkTopG.selectChildren("g");
 
@@ -145,80 +132,7 @@ class ForceGraph {
         });
 
       nodeGs.style("transform", (d) => `translate(${d.x}px,${d.y}px)`);
-    };
-
-    this.simulation = this.createSimulation(tick, config);
-    // create drag & zoom
-    this.createDrag(this.simulation, nodeTopG);
-    this.createZoom(this.simulation);
-  }
-
-  /* create zoom & apply it to according svg elements */
-  createZoom(simulation, { scale = [0.3, 8] } = {}) {
-    const self = this;
-    const svgContainer = this.svgContainer;
-    const topGs = svgContainer.selectChildren("g");
-    // zoom function
-    const zooming = function (event, d) {
-      // get transform
-      const transform = event.transform;
-      // apply transform to top g elements
-      topGs.attr("transform", transform);
-    };
-
-    const zoom = d3.zoom().scaleExtent(scale).on("zoom", zooming);
-    svgContainer.call(zoom);
-  }
-  /* create drag & apply it to according svg elements */
-  createDrag(simulation, nodeTopG) {
-    const self = this;
-    // drag function
-    const dragstarted = function (event) {
-      if (!event.active) {
-        simulation
-          .alphaTarget(
-            +self.defaltForceConfig.alphaTarget + 0.5 > 1
-              ? 1
-              : +self.defaltForceConfig.alphaTarget + 0.5
-          )
-          .restart();
-      }
-
-      event.subject.fx = event.subject.x;
-      event.subject.fy = event.subject.y;
-    };
-    const dragged = function (event) {
-      // 更新节点位置
-      event.subject.fx = event.x;
-      event.subject.fy = event.y;
-    };
-    const dragended = function (event) {
-      if (!event.active) {
-        simulation.alphaTarget(self.defaltForceConfig.alphaTarget);
-      }
-
-      if (event.subject.hasPinned) {
-        event.subject.fx = event.subject.x;
-        event.subject.fy = event.subject.y;
-      } else {
-        event.subject.fx = null;
-        event.subject.fy = null;
-      }
-    };
-    // create drag instance
-    const dragDefine = d3
-      .drag()
-      .container(nodeTopG.node())
-      .subject(function () {
-        return d3.select(this.parentNode).datum();
-      })
-      .on("start", dragstarted)
-      .on("drag", dragged)
-      .on("end", dragended);
-    // apply drag to svg elements
-    const targetNodeGs = nodeTopG.selectChildren("g").filter((d) => d.id !== 0);
-    targetNodeGs.selectChildren(".circle-container").call(dragDefine);
-    targetNodeGs.selectChildren(".vl-container").call(dragDefine);
+    }
   }
 
   /* create force simulation
@@ -318,6 +232,141 @@ class ForceGraph {
       .on("tick", tick);
     return simulation;
   }
+  /* create zoom & apply it to according svg elements */
+  createZoom(simulation, { scale = [0.3, 8] } = {}) {
+    const self = this;
+    const svgContainer = this.svgContainer;
+    const topGs = svgContainer.selectChildren("g");
+    // zoom function
+    const zooming = function (event, d) {
+      // get transform
+      const transform = event.transform;
+      // apply transform to top g elements
+      topGs.attr("transform", transform);
+    };
+
+    const zoom = d3.zoom().scaleExtent(scale).on("zoom", zooming);
+    svgContainer.call(zoom);
+  }
+  /* create drag & apply it to according svg elements */
+  createDrag(simulation, nodeTopG) {
+    const self = this;
+    // drag function
+    const dragstarted = function (event) {
+      if (!event.active) {
+        simulation
+          .alphaTarget(
+            +self.defaltForceConfig.alphaTarget + 0.5 > 1
+              ? 1
+              : +self.defaltForceConfig.alphaTarget + 0.5
+          )
+          .restart();
+      }
+
+      event.subject.fx = event.subject.x;
+      event.subject.fy = event.subject.y;
+    };
+    const dragged = function (event) {
+      // 更新节点位置
+      event.subject.fx = event.x;
+      event.subject.fy = event.y;
+    };
+    const dragended = function (event) {
+      if (!event.active) {
+        simulation.alphaTarget(self.defaltForceConfig.alphaTarget);
+      }
+
+      if (event.subject.hasPinned) {
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+      } else {
+        event.subject.fx = null;
+        event.subject.fy = null;
+      }
+    };
+    // create drag instance
+    const dragDefine = d3
+      .drag()
+      .container(nodeTopG.node())
+      .subject(function () {
+        return d3.select(this.parentNode).datum();
+      })
+      .on("start", dragstarted)
+      .on("drag", dragged)
+      .on("end", dragended);
+    // apply drag to svg elements
+    // const targetNodeGs = nodeTopG.selectChildren("g").filter((d) => d.id !== 0);
+    // targetNodeGs.selectChildren(".circle-container").call(dragDefine);
+    // targetNodeGs.selectChildren(".vl-container").call(dragDefine);
+    return dragDefine;
+  }
+  /* -------------------------------------------------------------------------- */
+  // update
+  /* -------------------------------------------------------------------------- */
+
+  /*
+    contruct new data based on tree's info and old data value
+   */
+  constructNodeData(nodeData) {
+    return nodeData.map((item) => {
+      const oldValue = this.nodeIdMap.get(item.id);
+      let newNode = null;
+      if (oldValue) {
+        newNode = {
+          // inherit the oldvalue
+          ...oldValue,
+          layer: item.layer,
+        };
+      } else {
+        // add config variables into origin data
+        newNode = {
+          ...item,
+          showVL: false,
+          hasPinned: false,
+          vlConfig: null, // {view, border(w/h/r), img(w/h)}
+        };
+      }
+      return newNode;
+    });
+  }
+
+  updateGraphData(graphData) {
+    this.simulation.stop();
+    // reset node & link data
+    this.nodeData = this.constructNodeData(graphData.node);
+    this.linkData = graphData.link;
+    // reset other data
+    this.resetIdMap();
+    this.maxLayer = this.getMaxLayer();
+    this.updateDomByData();
+    this.rebindSimulation();
+  }
+
+  rebindSimulation() {
+    const simulation = this.simulation;
+    // rebind data of simulation
+    simulation.nodes(this.nodeData);
+    simulation.force("link").links(this.linkData);
+    // reset alpha to reheat
+    simulation.alpha(this.defaltForceConfig.alpha);
+    simulation.restart();
+  }
+
+  resetIdMap() {
+    // set id-maps
+    this.nodeIdMap.clear();
+    this.linkIdMap.clear();
+    this.nodeData.forEach((node) => {
+      this.nodeIdMap.set(node.id, node);
+    });
+    this.linkData.forEach((link) => {
+      this.linkIdMap.set(`${link.source}_${link.target}`, link);
+    });
+  }
+
+  getMaxLayer() {
+    return d3.max(this.nodeData, (d) => d.layer);
+  }
 
   /* 'refresh' DOM by new data*/
   updateDomByData(
@@ -357,7 +406,7 @@ class ForceGraph {
       ["#C69DE9", "#F7A69F", "#53C4B6"]
     );
     bgTopG
-      .selectAll("circle")
+      .selectChildren("circle")
       .data(d3.range(1, this.maxLayer + 1))
       .join(
         (enter) => {
@@ -378,8 +427,9 @@ class ForceGraph {
           this.fadeOutTransition(exit);
         }
       );
+
     nodeTopG
-      .selectAll("g")
+      .selectChildren("g")
       .data(nodeData, (d) => d.id)
       .join(
         (enter) => {
@@ -391,6 +441,7 @@ class ForceGraph {
           // add cursor event above g
           circleContainer
             .filter((d) => d.id !== 0)
+            .call(this.dragDefine)
             .attr("display", function () {
               const data = d3.select(this.parentNode).datum();
               return data.showVL ? "none" : null;
@@ -463,7 +514,8 @@ class ForceGraph {
             .attr("href", function () {
               const topG = d3.select(this.parentNode);
               const data = topG.datum();
-              const href = `/pic/insight-icon/${data.type}.png`;
+              const type = data.id === 0 ? "start" : data.type;
+              const href = `/pic/insight-icon/${type}.png`;
               return href;
             });
 
@@ -471,6 +523,7 @@ class ForceGraph {
           // g as vega-lite container
           const vlContainer = nodeGs
             .append("g")
+            .call(this.dragDefine)
             .attr("class", "vl-container")
             .attr("display", function () {
               const data = d3.select(this.parentNode).datum();
@@ -619,7 +672,7 @@ class ForceGraph {
         }
       );
     linkTopG
-      .selectAll("g")
+      .selectChildren("g")
       .data(linkData, (d) => {
         if (typeof d.source === "object") {
           return `${d.source.id}_${d.target.id}`;
@@ -645,6 +698,17 @@ class ForceGraph {
           this.fadeOutTransition(exit);
         }
       );
+  }
+  /* set attr of svg_container
+   * return its d3_ref */
+  setSvgContainer(containerId) {
+    const svgContainer = d3.select(containerId);
+    const containerViewWidth = this.containerViewWidth;
+    const containerViewHeight = this.containerViewHeight;
+    svgContainer
+      .attr("viewBox", [0, 0, containerViewWidth, containerViewHeight])
+      .attr("preserveAspectRatio", "xMidYMid slice");
+    return svgContainer;
   }
 
   /* show vega-lite graph within topG */
