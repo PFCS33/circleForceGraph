@@ -59,7 +59,7 @@ class Tree {
   }
 
   /* delete node based on id
-   * return valueList of all deleted node
+   * return valueList of all deleted nodes
    */
   deleteNode(targetId) {
     const targetNode = this.nodeIdMap.get(targetId);
@@ -118,7 +118,7 @@ class Tree {
         descendantList.push(node.value);
         node.children.forEach((childNode) => {
           descendantList.push(childNode.value);
-          const descendants = this.getDesListByNode(childNode);
+          const descendants = getDesListByNode(childNode);
           descendantList.push(...descendants);
         });
       }

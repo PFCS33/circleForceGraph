@@ -387,7 +387,6 @@ class ForceGraph {
       // vl icon
       vlIconSize,
       vlIconGap,
-
       // other
       durationTime,
       // bg circle
@@ -606,8 +605,8 @@ class ForceGraph {
           // add vl icons
           headers
             .append("use")
-            .attr("href", "#close")
-            .attr("class", "vl-icon close")
+            .attr("href", "#collapse")
+            .attr("class", "vl-icon collapse")
             .attr("cursor", "pointer")
             .attr("width", vlIconSize)
             .attr("height", vlIconSize)
@@ -661,7 +660,6 @@ class ForceGraph {
               "transform",
               `translate(${-(vlIconSize + vlIconGap) * 2}px, ${0})`
             )
-
             .on("click", function () {
               const topG = d3.select(this.parentNode.parentNode.parentNode);
               const data = topG.datum();
@@ -691,6 +689,18 @@ class ForceGraph {
               self.togglePin(data, vlContainer);
             });
 
+          headers
+            .append("use")
+            .attr("href", "#close")
+            .attr("class", "vl-icon close")
+            .attr("cursor", "pointer")
+            .attr("width", vlIconSize)
+            .attr("height", vlIconSize)
+            .on("click", function (e, d) {
+              self.emit("node-delete", d.id);
+            });
+          // .style("transform", `translate(${-vlIconSize - vlIconGap}px, ${0})`)
+          // container for vl graph
           const vlBoxes = vlBody.append("g").attr("class", "vl-box");
 
           // add animation
@@ -747,7 +757,7 @@ class ForceGraph {
     {
       vlWidth = 150,
       vlHeight = 150,
-      borderWidthOffset = 3,
+      borderWidthOffset = 8,
       borderHeightOffset = 8,
       vlIconSize = this.defaltDomConfig.vlIconSize,
       vlIconGap = this.defaltDomConfig.vlIconGap,
@@ -811,6 +821,15 @@ class ForceGraph {
         `translate(${-borderWidth / 2}px, ${-borderHeight / 2}px)`
       );
       // set position of header(icons)
+      vlContainer
+        .selectChild(".header")
+        .selectChild(".vl-icon.close")
+        .style(
+          "transform",
+          `translate(${-borderWidth + vlIconGap}px,${
+            vlIconSize + 2 * vlIconGap
+          }px)`
+        );
       vlContainer
         .selectChild(".header")
         .style(

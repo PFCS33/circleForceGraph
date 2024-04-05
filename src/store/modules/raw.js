@@ -50,7 +50,7 @@ export default {
           });
       });
     },
-    // post quesition and then add nodes in tree
+    // post quesition ,and then add nodes in tree & update graph
     postQuestion(context, payload) {
       return new Promise((resolve, reject) => {
         postData(baseUrl + "/question/data", payload)
@@ -112,6 +112,14 @@ export default {
           id: d.id,
         }))
       );
+    },
+
+    /* detete node from tree & update graph
+     */
+    deleteTreeNode(context, payload) {
+      const tree = context.getters["treeData"];
+      tree.deleteNode(payload.id);
+      context.dispatch("updateGraphDataByTree", []);
     },
 
     /*

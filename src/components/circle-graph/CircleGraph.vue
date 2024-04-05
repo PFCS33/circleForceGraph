@@ -103,6 +103,7 @@ import { ForceGraph } from "@/utils/graphGenerator.js";
 import InfoPanel from "@/components/scope-panel/InfoPanel.vue";
 import QuestionBar from "@/components/question-bar/QuestionBar.vue";
 import { useStore } from "vuex";
+import { ElMessage } from "element-plus";
 /* -------------------------------------------------------------------------- */
 // get graphData from vuex
 /* -------------------------------------------------------------------------- */
@@ -119,6 +120,7 @@ watch(graphData, (newVal, oldVal) => {
       forceGraph = new ForceGraph("#svg-container", nodeData, linkData);
       forceGraph.on("node-click", setFocusEmitNode);
       forceGraph.on("question-click", setQuestionEmitNode);
+      forceGraph.on("node-delete", deleteNode);
       forceGraph.createForceGraph();
     } else {
       // TODO update graph data
@@ -130,6 +132,30 @@ watch(graphData, (newVal, oldVal) => {
   }
 });
 
+const deleteNode = (id) => {
+  ElMessageBox.confirm(
+    "System will delete all descendants. Continue?",
+    "Warning",
+    {
+      confirmButtonText: "OK",
+      cancelButtonText: "Cancel",
+      type: "warning",
+    }
+  )
+    .then(() => {
+      // delete node in tree
+      store.dispatch("deleteTreeNode", {
+        id: id,
+      });
+      // clear question state
+      setQuestionEmitNode({
+        id: id,
+        element: null,
+      });
+      ElMessage.success("Delete complete");
+    })
+    .catch(() => {});
+};
 /* -------------------------------------------------------------------------- */
 // panel related
 /* -------------------------------------------------------------------------- */
@@ -404,6 +430,14 @@ onUnmounted(() => {
           &.question {
             fill: $third-color;
           }
+
+          &.close {
+            fill: $primary-color;
+          }
+        }
+
+        &.close {
+          fill: rgba($primary-color, 0.4);
         }
       }
     }
@@ -449,5 +483,19 @@ onUnmounted(() => {
 
 .el-notification {
   --el-notification-width: 200px;
+}
+.el-message-box {
+  --el-color-primary: #{$primary-color};
+  .el-button {
+    &.el-button--primary {
+      --el-button-hover-bg-color: #{$primary-color-light};
+      --el-button-active-bg-color: #{$primary-color-light};
+    }
+    --el-button-hover-bg-color: #{$primary-color-gray};
+    --el-button-active-bg-color: #{$primary-color-gray};
+    --el-button-hover-border-color: #{$primary-color-light};
+    --el-button-active-border-color: #{$primary-color-light};
+    --el-button-outline-color: #{$primary-color-light};
+  }
 }
 </style>
