@@ -177,14 +177,14 @@ onMounted(() => {
 .hide-icon {
   position: absolute;
   top: 0;
-  right: 43rem;
+  right: 25rem;
   border: $border;
   border-right: none;
   background-color: $background-color-light;
   @include icon-style();
 }
 .panel-container {
-  width: 43rem;
+  width: 25rem;
   height: 100%;
   z-index: $z-middle;
 

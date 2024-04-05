@@ -330,6 +330,9 @@ class ForceGraph {
     });
   }
 
+  /*
+     rebind new data into whole graph system
+   */
   updateGraphData(graphData) {
     this.simulation.stop();
     // reset node & link data
@@ -451,35 +454,39 @@ class ForceGraph {
               const topG = d3.select(this.parentNode);
               const circleContainer = d3.select(this);
               const data = topG.datum();
-              if (data.id !== 0) {
-                // emit node click event
-                self.emit("node-click", {
-                  id: data.id,
-                  element: topG.selectChild(".vl-container"),
-                });
-                // change data
-                data.showVL = true;
-                // switch display btw circle and vega-lite
-                self.fadeOutTransition(circleContainer, "hide");
-                // reset attr of vl-container, prepare for animation
-                const vlContainer = topG.selectChild(".vl-container");
-                vlContainer.attr("opacity", 0).attr("display", null);
-                vlContainer
-                  .selectChildren(".border")
-                  .attr("width", 0)
-                  .attr("height", 0);
-                // if don't have config, draw vega-lite graph
-                if (!data.vlConfig) {
-                  self.drawVl(topG);
-                } else {
-                  // add fade-in animation
-                  self.vlInTransition(
-                    vlContainer,
-                    data.vlConfig.border.width,
-                    data.vlConfig.border.height
-                  );
-                  self.refreshSimulation();
-                }
+
+              // emit node click event
+              self.emit("node-click", {
+                id: data.id,
+                element: topG.selectChild(".vl-container"),
+              });
+              // emit question click event
+              self.emit("question-click", {
+                id: data.id,
+                element: topG,
+              });
+              // change data
+              data.showVL = true;
+              // switch display btw circle and vega-lite
+              self.fadeOutTransition(circleContainer, "hide");
+              // reset attr of vl-container, prepare for animation
+              const vlContainer = topG.selectChild(".vl-container");
+              vlContainer.attr("opacity", 0).attr("display", null);
+              vlContainer
+                .selectChildren(".border")
+                .attr("width", 0)
+                .attr("height", 0);
+              // if don't have config, draw vega-lite graph
+              if (!data.vlConfig) {
+                self.drawVl(topG);
+              } else {
+                // add fade-in animation
+                self.vlInTransition(
+                  vlContainer,
+                  data.vlConfig.border.width,
+                  data.vlConfig.border.height
+                );
+                self.refreshSimulation();
               }
             })
             .on("mouseover", function () {
@@ -541,6 +548,27 @@ class ForceGraph {
               event.preventDefault();
               event.stopPropagation();
             });
+          // add spinner container
+          const spinnerContainers = nodeGs
+            .filter((d) => d.id !== 0)
+            .append("g")
+            .attr("class", "sp-container")
+            .attr("pointer-events", "none")
+            .classed("has-query", false);
+          const spBG = spinnerContainers
+            .append("circle")
+            .attr("class", "sp-bg")
+            .attr("r", insightIconSize / 2);
+
+          const spinnerIcons = spinnerContainers
+            .append("use")
+            .attr("class", "sp-icon")
+            .attr("href", "#spinner")
+
+            .attr("width", insightIconSize)
+            .attr("height", insightIconSize)
+            .attr("x", -insightIconSize / 2)
+            .attr("y", -insightIconSize / 2);
 
           const vlBody = vlContainer
             .append("g")
@@ -552,6 +580,10 @@ class ForceGraph {
               self.emit("node-click", {
                 id: data.id,
                 element: topG.selectChild(".vl-container"),
+              });
+              self.emit("question-click", {
+                id: data.id,
+                element: topG,
               });
             });
           // rect as border
@@ -579,7 +611,6 @@ class ForceGraph {
             .attr("cursor", "pointer")
             .attr("width", vlIconSize)
             .attr("height", vlIconSize)
-
             .style("transform", `translate(${-vlIconSize - vlIconGap}px, ${0})`)
             .on("click", function () {
               const topG = d3.select(this.parentNode.parentNode.parentNode);
@@ -637,7 +668,7 @@ class ForceGraph {
               // emit question click event
               self.emit("question-click", {
                 id: data.id,
-                element: topG.selectChild(".vl-container"),
+                element: topG,
               });
             });
 
@@ -648,7 +679,6 @@ class ForceGraph {
             .attr("cursor", "pointer")
             .attr("width", vlIconSize)
             .attr("height", vlIconSize)
-
             .style(
               "transform",
               `translate(${-(vlIconSize + vlIconGap) * 3}px, ${0})`
@@ -817,7 +847,8 @@ class ForceGraph {
     layer,
     { baseRadius = this.defaltForceConfig.baseRadius, a = 1000 } = {}
   ) {
-    return baseRadius * layer;
+    return baseRadius * Math.pow(layer, 1.1);
+    // return baseRadius * layer;
   }
 
   // toggle data.hasPinned of one node

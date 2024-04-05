@@ -56,6 +56,7 @@ export default {
         postData(baseUrl + "/question/data", payload)
           .then((data) => {
             const newNodeInfo = data.node;
+
             context.dispatch("addTreeNode", {
               parent: payload.id,
               children: newNodeInfo,

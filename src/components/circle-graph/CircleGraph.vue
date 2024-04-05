@@ -22,6 +22,7 @@
         class="qsbar"
         v-if="showQsBar"
         :queryId="questionNode.id"
+        @query="handleQuery"
         @close="
           setQuestionEmitNode({
             id: questionNode.id,
@@ -223,7 +224,7 @@ const toggleShowQsBar = () => {
   }
 };
 const toggleQuestionCSS = (data, isQuestion) => {
-  const element = data.element;
+  const element = data.element.selectChild(".vl-container");
   element.classed("has-question", isQuestion);
 };
 const closeQsBar = () => {
@@ -232,7 +233,50 @@ const closeQsBar = () => {
 const setQuestionEmitNode = (paylaod) => {
   myTool.reactiveAssign(paylaod, questionEmitNode);
 };
-
+const queryStateMap = new Map();
+const handleQuery = (paylaod) => {
+  const targetQueryEl = questionNode.element;
+  const queryId = questionNode.id;
+  // set style of question node
+  toggleQuerySpCSS(targetQueryEl, true);
+  // record multiple queries state
+  addQueryState(queryId);
+  // add alter to remide user
+  ElNotification.success({
+    title: "Send a query",
+    duration: 1500,
+  });
+  store // call post func in vuex
+    .dispatch("postQuestion", paylaod)
+    .then((res) => {
+      ElMessage.success(res.message);
+    })
+    .catch((e) => {
+      ElMessage.error(`Query Error: ${e.message}`);
+    })
+    .finally(() => {
+      const count = deleteQueryState(queryId);
+      if (count === 0) {
+        toggleQuerySpCSS(targetQueryEl, false);
+      }
+    });
+};
+const deleteQueryState = (id) => {
+  const count = queryStateMap.get(id) - 1;
+  queryStateMap.set(id, count);
+  return count;
+};
+const addQueryState = (id) => {
+  const count = queryStateMap.get(id);
+  if (count) {
+    queryStateMap.set(id, count + 1);
+  } else {
+    queryStateMap.set(id, 1);
+  }
+};
+const toggleQuerySpCSS = (element, hasQuery) => {
+  element.selectChild(".sp-container").classed("has-query", hasQuery);
+};
 /* -------------------------------------------------------------------------- */
 // focus node related
 /* -------------------------------------------------------------------------- */
@@ -389,5 +433,21 @@ onUnmounted(() => {
       }
     }
   }
+  .sp-container {
+    display: none;
+    &.has-query {
+      display: inline-block;
+      .sp-icon {
+        fill: $background-color-light;
+      }
+      .sp-bg {
+        fill: rgba($primary-color, 0.46);
+      }
+    }
+  }
+}
+
+.el-notification {
+  --el-notification-width: 200px;
 }
 </style>

@@ -21,34 +21,28 @@
 <script setup>
 import { ref } from "vue";
 import SvgIcon from "../ui/SvgIcon.vue";
-import { useStore } from "vuex";
+
 /* -------------------------------------------------------------------------- */
 // emit
 /* -------------------------------------------------------------------------- */
-const emit = defineEmits(["close"]);
+const emit = defineEmits(["close", "query"]);
 const closeBar = () => {
   emit("close", null);
 };
 /* -------------------------------------------------------------------------- */
 // question content
 /* -------------------------------------------------------------------------- */
-const store = useStore();
 const { queryId } = defineProps({
   queryId: Number,
 });
 const content = ref(null);
 const sendQuestion = () => {
-  store
-    .dispatch("postQuestion", {
-      id: queryId,
-      content: content.value,
-    })
-    .then((res) => {
-      ElMessage.success(res.message);
-    })
-    .catch((e) => {
-      ElMessage.error(`Query Error: ${e.message}`);
-    });
+  emit("query", {
+    id: queryId,
+    content: content.value,
+  });
+  // reset content
+  content.value = null;
 };
 </script>
 
