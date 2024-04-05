@@ -866,7 +866,7 @@ class ForceGraph {
     layer,
     { baseRadius = this.defaltForceConfig.baseRadius, a = 1000 } = {}
   ) {
-    return baseRadius * Math.pow(layer, 1.1);
+    return baseRadius * Math.pow(layer, 1.3);
     // return baseRadius * layer;
   }
 

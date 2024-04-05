@@ -39,7 +39,7 @@
       <div class="insight-list-border" v-show="!isLoadingPost">
         <div
           class="wrapper"
-          :key="insightData.id"
+          :key="insightData['real_id']"
           v-for="insightData in currentPageData"
         >
           <transition name="slide">
@@ -48,7 +48,11 @@
               <div class="value">{{ insightData.description }}</div>
             </div>
           </transition>
-          <div class="insight-border">
+          <div
+            class="insight-border"
+            v-loading="isAddingNode && curAddingId === insightData['real_id']"
+            element-loading-text="Adding Node..."
+          >
             <div class="text-container">
               <div class="type-box">
                 <span class="title">Type</span>
@@ -61,7 +65,11 @@
             </div>
             <div class="vl-container" ref="vlContainers"></div>
             <div class="btn-box">
-              <SvgIcon iconName="add-outline" class="icon"></SvgIcon>
+              <SvgIcon
+                iconName="add-outline"
+                @click="addNewNode(insightData)"
+                class="icon"
+              ></SvgIcon>
               <SvgIcon
                 :class="['icon', { 'has-desc': insightData.isDescVisible }]"
                 iconName="more"
@@ -111,6 +119,27 @@ const handlePostData = (data) => {
   currentPageData.value = getPageData(currentPageNumber.value);
   // show content
   isLoadingPost.value = false;
+};
+/* -------------------------------------------------------------------------- */
+// tree manipulation
+/* -------------------------------------------------------------------------- */
+const isAddingNode = ref(false);
+const curAddingId = ref(0);
+const addNewNode = (insightData) => {
+  isAddingNode.value = true;
+  curAddingId.value = insightData["real_id"];
+  store
+    .dispatch("addNewNode", insightData)
+    .then((res) => {
+      ElMessage.success(res.message);
+    })
+    .catch((e) => {
+      ElMessage.error(`Add Node Error: ${e.message}`);
+    })
+    .finally(() => {
+      isAddingNode.value = false;
+      curAddingId.value = 0;
+    });
 };
 
 /* -------------------------------------------------------------------------- */
