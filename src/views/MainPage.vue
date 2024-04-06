@@ -10,10 +10,10 @@
     </div>
     <div class="content-box">
       <div class="filter-box">
-        <FilterPanel></FilterPanel>
+        <FilterPanel :curRealId="curRealId"></FilterPanel>
       </div>
       <div class="graph-box">
-        <CircleGraph></CircleGraph>
+        <CircleGraph @changeFocusNode="changeFocusNode"></CircleGraph>
       </div>
     </div>
   </div>
@@ -27,7 +27,14 @@ import FilterPanel from "@/components/filter-panel/FilterPanel.vue";
 const store = useStore();
 // control timing of creating force graph component
 const isLoading = ref(true);
-const hasGetData = ref(false);
+/* -------------------------------------------------------------------------- */
+// track focus node
+/* -------------------------------------------------------------------------- */
+const curRealId = ref(-1);
+const changeFocusNode = (realId) => {
+  // console.log(realId);
+  curRealId.value = realId;
+};
 // starter
 onMounted(() => {
   // load data

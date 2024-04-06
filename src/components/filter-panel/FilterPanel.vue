@@ -49,7 +49,10 @@
             </div>
           </transition>
           <div
-            class="insight-border"
+            :class="[
+              'insight-border',
+              { isSelected: props.curRealId === insightData['real_id'] },
+            ]"
             v-loading="isAddingNode && curAddingId === insightData['real_id']"
             element-loading-text="Adding Node..."
           >
@@ -63,7 +66,11 @@
                 <span class="value">{{ insightData.score }}</span>
               </div>
             </div>
-            <div class="vl-container" ref="vlContainers"></div>
+            <div
+              class="vl-container"
+              :id="insightData['real_id']"
+              ref="vlContainers"
+            ></div>
             <div class="btn-box">
               <SvgIcon
                 iconName="add-outline"
@@ -100,12 +107,14 @@ import vegaEmbed from "vega-embed";
 import { baseUrl, postData } from "@/utils/api.js";
 import SvgIcon from "../ui/SvgIcon.vue";
 const store = useStore();
-
-// data loading flag
-const isLoading = ref(true);
+const props = defineProps({
+  curRealId: Number,
+});
 /* -------------------------------------------------------------------------- */
 // communicate with backend server
 /* -------------------------------------------------------------------------- */
+// data loading flag
+const isLoading = ref(true);
 const isLoadingPost = ref(true);
 const insightList = ref(null);
 // communicate to server to get other insights in the same data scope
@@ -195,7 +204,10 @@ watch(currentPageNumber, (newVal, oldVal) => {
 watch(currentPageData, (newVal, oldVal) => {
   nextTick(() => {
     vlContainers.value.forEach((containerRef, index) => {
-      const data = newVal[index];
+      // attention: attribute is String type
+      const realId = +containerRef.getAttribute("id");
+      const data = newVal.find((item) => item["real_id"] === realId);
+      // console.log(data);
       drawPanelVl(d3.select(containerRef), data);
     });
   });
@@ -357,8 +369,6 @@ watch(curValues, (newVal) => {
             }
           }
           .text-container {
-            // background-color: $background-color-light;
-            // box-shadow: 0.1rem 0.1rem 0.3rem 0.1rem rgba($primary-color, 0.4);
             flex: auto;
             width: 100%;
             @include flex-box();
@@ -375,11 +385,9 @@ watch(curValues, (newVal) => {
               .title {
                 font-weight: $font-weight-bold;
                 color: $primary-color;
-                // transition: color 0.2s ease-out;
               }
               .value {
                 color: rgba($text-color, 0.8);
-                // transition: color 0.2s ease-out;
               }
             }
           }
@@ -402,8 +410,9 @@ watch(curValues, (newVal) => {
           }
 
           &.isSelected {
-            box-shadow: inset 0.5rem 0.3rem 0.8rem -0.3rem rgba($primary-color, 0.5);
-            background-color: rgba($primary-color, 0.1);
+            box-shadow: inset 0.5rem 0.3rem 0.8rem 0.1rem
+              rgba($primary-color, 0.26);
+            background-color: rgba($primary-color-light, 0.1);
             .text-container {
               .btn {
                 color: $third-color-light;

@@ -8,10 +8,16 @@
           @click="emit('hide', null)"
         ></SvgIcon>
       </div>
-      <div class="icon-border">
+      <div
+        :class="['icon-border', { isSelected: curTab === 'detail' }]"
+        @click="switchTab('detail')"
+      >
         <SvgIcon iconName="chart" class="icon chart"> </SvgIcon>
       </div>
-      <div class="icon-border">
+      <div
+        :class="['icon-border', { isSelected: curTab === 'history' }]"
+        @click="switchTab('history')"
+      >
         <SvgIcon iconName="history" class="icon history"> </SvgIcon>
       </div>
     </div>
@@ -19,37 +25,43 @@
       class="panel-container"
       v-loading="isLoading"
       element-loading-text="Fetching data..."
+      element-loading-custom-class="main"
     >
-      <div class="scope-border border">
-        <div class="title-box">
-          <h2 class="title">Data Scope</h2>
-          <SvgIcon iconName="turn-left" class="icon"></SvgIcon>
+      <div class="detail-page" v-if="curTab === 'detail'">
+        <div class="scope-border border">
+          <div class="title-box">
+            <h2 class="title">Data Scope</h2>
+            <SvgIcon iconName="turn-left" class="icon"></SvgIcon>
+          </div>
+          <div class="content">
+            <div class="item-box" v-for="(value, col) in insightData.scope">
+              <div class="label item">{{ col }}</div>
+              <div class="value item">{{ value }}</div>
+            </div>
+          </div>
         </div>
-        <div class="content">
-          <div class="item-box" v-for="(value, col) in insightData.scope">
-            <div class="label item">{{ col }}</div>
-            <div class="value item">{{ value }}</div>
+        <div class="detail-border border">
+          <h2 class="title">Details</h2>
+          <div class="content">
+            <div class="item-box">
+              <div class="label item">Type</div>
+              <div :class="['value', 'item', 'type', insightData.category]">
+                {{ insightData.type }}
+              </div>
+            </div>
+            <div class="item-box">
+              <div class="label item">Score</div>
+              <div class="value item score">{{ insightData.score }}</div>
+            </div>
+            <div class="item-box desc">
+              <div class="label item">Description</div>
+              <div class="value item">{{ insightData.description }}</div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="detail-border border">
-        <h2 class="title">Details</h2>
-        <div class="content">
-          <div class="item-box">
-            <div class="label item">Type</div>
-            <div :class="['value', 'item', 'type', insightData.category]">
-              {{ insightData.type }}
-            </div>
-          </div>
-          <div class="item-box">
-            <div class="label item">Score</div>
-            <div class="value item score">{{ insightData.score }}</div>
-          </div>
-          <div class="item-box desc">
-            <div class="label item">Description</div>
-            <div class="value item">{{ insightData.description }}</div>
-          </div>
-        </div>
+      <div class="history-page" v-else-if="curTab === 'history'">
+        <h1>History</h1>
       </div>
     </div>
   </div>
@@ -66,7 +78,28 @@ import SvgIcon from "../ui/SvgIcon.vue";
 const props = defineProps({
   realId: Number,
 });
+const realId = props.realId;
 const emit = defineEmits(["hide"]);
+
+/* -------------------------------------------------------------------------- */
+// tab switching
+/* -------------------------------------------------------------------------- */
+const curTab = ref("null");
+const switchTab = (mode) => {
+  curTab.value = mode;
+};
+
+watch(curTab, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    switch (newVal) {
+      case "detail":
+        postFunc(realId);
+        break;
+      case "history":
+        break;
+    }
+  }
+});
 
 /* -------------------------------------------------------------------------- */
 // communicate with backend server
@@ -80,7 +113,7 @@ const insightData = reactive({
   description: null,
 });
 
-// communicate to server to get data scope and description about focus insight
+// detail page: get data scope and description about focus insight
 const postFunc = async (id) => {
   try {
     const data = await postData(baseUrl + "/panel/id", {
@@ -104,8 +137,7 @@ const postFunc = async (id) => {
 // life hooks
 /* -------------------------------------------------------------------------- */
 onMounted(() => {
-  const realId = props.realId;
-  postFunc(realId);
+  curTab.value = "detail";
 });
 </script>
 
@@ -125,11 +157,17 @@ onMounted(() => {
       border-right: none;
       background-color: $background-color-light;
       transition: background-color ease-out 0.2s;
-      &:hover {
-        background-color: $primary-color;
-      }
       .icon {
         @include icon-style();
+      }
+      &.isSelected,
+      &:hover {
+        background-color: $primary-color;
+        cursor: pointer;
+        .icon {
+          background-color: $primary-color;
+          fill: #fff;
+        }
       }
     }
   }
@@ -144,124 +182,131 @@ onMounted(() => {
   border-radius: $border-radius;
   border: $border;
 
-  @include flex-box(column);
-  // user-select: none;
-  gap: 1rem;
-
-  .border {
-    width: 100%;
+  .detail-page {
     @include flex-box(column);
-    gap: 0.8rem;
-    .title {
-      color: $primary-color;
-      margin: 0.6rem 0 0 0.5rem;
-      font-weight: $font-weight-bold;
-      user-select: none;
-    }
-    .content {
-      @include flex-box(column);
-      align-items: flex-start;
-      gap: 0.4rem;
-      width: 100%;
-      padding: 0 0.4rem;
-      padding-left: 0.6rem;
+    // user-select: none;
+    gap: 1rem;
 
-      .item-box {
+    .border {
+      width: 100%;
+      @include flex-box(column);
+      gap: 0.8rem;
+      .title {
+        color: $primary-color;
+        margin: 0.6rem 0 0 0.5rem;
+        font-weight: $font-weight-bold;
+        user-select: none;
+      }
+      .content {
+        @include flex-box(column);
+        align-items: flex-start;
+        gap: 0.4rem;
         width: 100%;
-        @include flex-box();
-        .item {
+        padding: 0 0.4rem;
+        padding-left: 0.6rem;
+
+        .item-box {
+          height: 100%;
+          width: 100%;
           @include flex-box();
           align-items: center;
-          height: 100%;
-        }
-        .value {
-          color: $primary-color-dark;
-        }
-        .label {
-          font-weight: $font-weight-bold;
-          user-select: none;
-        }
-      }
-    }
-  }
 
-  .scope-border {
-    .title-box {
-      @include flex-box();
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.6rem 0 0 0.5rem;
-      .title {
-        margin: 0;
-      }
-      .icon {
-        @include icon-style();
-        margin-right: 0.5rem;
-      }
-    }
-    .content {
-      .item-box {
-        border-radius: 0.5rem;
-        background-color: $primary-color-light;
-        padding: 0.2rem;
-        height: 2.6rem;
-        gap: 0.6rem;
-
-        .label {
-          color: $background-color;
-          width: 25%;
-          margin-left: 0.2rem;
-        }
-        .value {
-          background-color: $background-color-light;
-          border: $border-text;
-          flex: auto;
-
-          font-size: 1.3rem;
-          padding-left: 0.5rem;
-        }
-      }
-    }
-  }
-  .detail-border {
-    .content {
-      gap: 0.6rem;
-      .item-box {
-        gap: 0.8rem;
-
-        .label {
-          color: $primary-color;
-        }
-        .value {
-          border: $border-text;
-          border-radius: 0.5rem;
-          padding: 0.3rem;
-          font-size: 1.3rem;
-          background-color: $background-color-light;
-          &.type {
-            color: #fff;
-            border: none;
-            padding: 0.4rem 0.8rem;
+          .item {
+            height: 100%;
+            @include flex-box();
+            align-items: center;
           }
-          &.score {
-          }
-          &.point {
-            background-color: $point-color;
-          }
-          &.shape {
-            background-color: $shape-color;
-          }
-          &.compound {
-            background-color: $compound-color;
-          }
-        }
-
-        &.desc {
-          @include flex-box(column);
-          gap: 0.6rem;
           .value {
-            width: 95%;
-            padding: 0.5rem;
+            color: $primary-color-dark;
+          }
+          .label {
+            font-weight: $font-weight-bold;
+            user-select: none;
+          }
+        }
+      }
+    }
+
+    .scope-border {
+      .title-box {
+        @include flex-box();
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.6rem 0 0 0.5rem;
+        .title {
+          margin: 0;
+        }
+        .icon {
+          @include icon-style();
+          margin-right: 0.5rem;
+        }
+      }
+      .content {
+        .item-box {
+          border-radius: 0.5rem;
+          background-color: $primary-color-light;
+          padding: 0.2rem;
+          height: 2.6rem;
+          gap: 0.6rem;
+
+          .label {
+            color: $background-color;
+            width: 25%;
+            margin-left: 0.2rem;
+          }
+          .value {
+            background-color: $background-color-light;
+            border: $border-text;
+            flex: auto;
+
+            font-size: 1.3rem;
+            padding-left: 0.5rem;
+          }
+        }
+      }
+    }
+    .detail-border {
+      .content {
+        gap: 0.6rem;
+        .item-box {
+          gap: 0.8rem;
+
+          .label {
+            color: $primary-color;
+          }
+          .value {
+            border: $border-text;
+            border-radius: 0.5rem;
+            padding: 0.3rem;
+            font-size: 1.3rem;
+            background-color: $background-color-light;
+            &.type {
+              color: #fff;
+              border: none;
+              padding: 0.4rem 0.8rem;
+            }
+            &.score {
+            }
+            &.point {
+              background-color: $point-color;
+            }
+            &.shape {
+              background-color: $shape-color;
+            }
+            &.compound {
+              background-color: $compound-color;
+            }
+          }
+
+          &.desc {
+            @include flex-box(column);
+            align-items: flex-start;
+            gap: 0.6rem;
+            .value {
+              width: 100%;
+              padding: 0.5rem;
+              padding-right: 0.8rem;
+            }
           }
         }
       }
