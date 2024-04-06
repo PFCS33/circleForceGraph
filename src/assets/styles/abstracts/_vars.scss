@@ -32,6 +32,7 @@ $border-color: #e1e1e1;
 $border-color-text: #dcdfe6;
 $border-color-dark: #aaa;
 $border: 0.15rem solid rgba(0, 0, 0, 0.2);
+$border-width: 0.15rem;
 $border-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
 $border-radius: 0.2rem;
 $border-text: 0.15rem solid #dcdfe6;
@@ -59,3 +60,6 @@ $avatar-size: $icon-size-regular;
 
 /* vl-related -------------------------------------------------------------------------- */
 $border-width-focus: 5px;
+$point-color: #c69de9;
+$shape-color: #f7a69f;
+$compound-color: #53c4b6;

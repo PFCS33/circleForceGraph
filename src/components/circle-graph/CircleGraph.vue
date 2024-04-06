@@ -13,7 +13,7 @@
         class="panel"
         v-if="showPanel"
         v-show="!hasHide"
-        :id="panelNode.id"
+        :realId="panelNode['real_id']"
         @hide="hidePanel"
       ></InfoPanel>
     </transition>
@@ -309,11 +309,13 @@ const toggleQuerySpCSS = (element, hasQuery) => {
 // node that child component emits
 const focusEmitNode = reactive({
   id: -1,
+  real_id: -1,
   element: null,
 });
 // 'real' focus node
 const panelNode = reactive({
   id: -1,
+  real_id: -1,
   element: null,
 });
 // watch to set css of new & old node
@@ -330,6 +332,7 @@ watch(focusEmitNode, (newVal) => {
       myTool.reactiveAssign(
         {
           id: -1,
+          real_id: -1,
           element: null,
         },
         panelNode

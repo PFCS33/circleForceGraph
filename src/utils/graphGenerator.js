@@ -457,6 +457,7 @@ class ForceGraph {
               // emit node click event
               self.emit("node-click", {
                 id: data.id,
+                real_id: data["real_id"],
                 element: topG.selectChild(".vl-container"),
               });
               // emit question click event
@@ -578,6 +579,7 @@ class ForceGraph {
               const data = topG.datum();
               self.emit("node-click", {
                 id: data.id,
+                real_id: data["real_id"],
                 element: topG.selectChild(".vl-container"),
               });
               self.emit("question-click", {
@@ -617,6 +619,7 @@ class ForceGraph {
               // emit empty node, clear focus status
               self.emit("node-click", {
                 id: data.id,
+                real_id: data["real_id"],
                 element: null,
               });
               // emit empty node, clear question status

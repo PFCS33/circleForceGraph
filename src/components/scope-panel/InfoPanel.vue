@@ -1,103 +1,98 @@
 <template>
   <div class="v-boundary">
-    <SvgIcon
-      iconName="arrow-right"
-      class="hide-icon"
-      @click="emit('hide', null)"
-    ></SvgIcon>
+    <div class="icon-box">
+      <div class="icon-border">
+        <SvgIcon
+          iconName="arrow-right"
+          class="icon hide"
+          @click="emit('hide', null)"
+        ></SvgIcon>
+      </div>
+      <div class="icon-border">
+        <SvgIcon iconName="chart" class="icon chart"> </SvgIcon>
+      </div>
+      <div class="icon-border">
+        <SvgIcon iconName="history" class="icon history"> </SvgIcon>
+      </div>
+    </div>
     <div
       class="panel-container"
       v-loading="isLoading"
       element-loading-text="Fetching data..."
     >
-      <div class="scope-border">
-        <el-tag
-          class="scope-item"
-          v-for="(value, col) in dataScope"
-          :key="col"
-          >{{ `${col}: ${value}` }}</el-tag
-        >
-      </div>
-      <div class="insight-list-border">
-        <div
-          class="insight-border"
-          v-for="insightData in currentPageData"
-          :class="{ isSelected: currentId === insightData.id }"
-        >
-          <div class="vl-container" ref="vlContainers"></div>
-          <div class="text-container">
-            <div class="type-box">
-              <span class="title">Type</span>
-              <span class="value">{{ insightData.type }}</span>
-            </div>
-            <div class="score-box">
-              <span class="title">Score</span>
-              <span class="value">{{ insightData.score }}</span>
-            </div>
-            <div class="desc-box">
-              <div class="title">Description</div>
-              <div class="value">{{ insightData.description }}</div>
-            </div>
-            <button @click="switchInsight(insightData)" class="btn">
-              {{ currentId === insightData.id ? "SELECTED" : "SELECT" }}
-            </button>
+      <div class="scope-border border">
+        <div class="title-box">
+          <h2 class="title">Data Scope</h2>
+          <SvgIcon iconName="turn-left" class="icon"></SvgIcon>
+        </div>
+        <div class="content">
+          <div class="item-box" v-for="(value, col) in insightData.scope">
+            <div class="label item">{{ col }}</div>
+            <div class="value item">{{ value }}</div>
           </div>
         </div>
       </div>
-      <el-pagination
-        v-if="insightList"
-        small
-        :page-size="pageSize"
-        layout="prev, pager, next"
-        :total="insightList.length"
-        v-model:current-page="currentPageNumber"
-        class="pagination"
-      />
+      <div class="detail-border border">
+        <h2 class="title">Details</h2>
+        <div class="content">
+          <div class="item-box">
+            <div class="label item">Type</div>
+            <div :class="['value', 'item', 'type', insightData.category]">
+              {{ insightData.type }}
+            </div>
+          </div>
+          <div class="item-box">
+            <div class="label item">Score</div>
+            <div class="value item score">{{ insightData.score }}</div>
+          </div>
+          <div class="item-box desc">
+            <div class="label item">Description</div>
+            <div class="value item">{{ insightData.description }}</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { watch, ref, onMounted, nextTick } from "vue";
+import { reactive, watch, ref, onMounted, nextTick } from "vue";
 import { baseUrl, postData } from "@/utils/api.js";
-import vegaEmbed from "vega-embed";
 import SvgIcon from "../ui/SvgIcon.vue";
+
+/* -------------------------------------------------------------------------- */
+// props & emit
+/* -------------------------------------------------------------------------- */
 const props = defineProps({
-  id: Number,
+  realId: Number,
 });
 const emit = defineEmits(["hide"]);
-// create refs
-const vlContainers = ref([]);
-/* -------------------------------------------------------------------------- */
-// insight switching
-/* -------------------------------------------------------------------------- */
-const currentId = ref(null);
-const switchInsight = (insightData) => {
-  const id = insightData.id;
-  currentId.value = id;
-};
+
 /* -------------------------------------------------------------------------- */
 // communicate with backend server
 /* -------------------------------------------------------------------------- */
 const isLoading = ref(true);
-const dataScope = ref(null);
-const insightList = ref(null);
-const insightIdMap = new Map();
-// communicate to server to get other insights in the same data scope
+const insightData = reactive({
+  scope: null,
+  type: null,
+  category: null,
+  score: null,
+  description: null,
+});
+
+// communicate to server to get data scope and description about focus insight
 const postFunc = async (id) => {
   try {
-    const data = await postData(baseUrl + "/panel/data", {
-      id: id,
+    const data = await postData(baseUrl + "/panel/id", {
+      realId: id,
     });
     // assign data to local value
-    dataScope.value = data.dataScope;
-    insightList.value = data.insightList;
-    // construct id map for look up
-    insightList.value.forEach((insight) => {
-      insightIdMap.set(insight.id, insight);
-    });
-    // initilize first page's data
-    currentPageData.value = getPageData(currentPageNumber.value);
+    insightData.scope = data.dataScope;
+    insightData.type = data.type;
+    insightData.category = data.category;
+    insightData.score = data.score;
+    insightData.description = data.description;
+
     // show page
     isLoading.value = false;
   } catch (e) {
@@ -106,66 +101,11 @@ const postFunc = async (id) => {
 };
 
 /* -------------------------------------------------------------------------- */
-// pagination related
+// life hooks
 /* -------------------------------------------------------------------------- */
-// number of insights in one page
-const pageSize = 3;
-// current page number (position), start from 1
-const currentPageNumber = ref(1);
-// insights in current page
-const currentPageData = ref(null);
-// get one page's data by page number
-const getPageData = (number) => {
-  const start = pageSize * (number - 1);
-  let end = start + pageSize;
-  return insightList.value.slice(start, end);
-};
-
-// draw vl-graph inside the panel
-const drawPanelVl = (container, data) => {
-  // reset container width
-  container.style("width", "60%");
-  // get vl spec, and add config
-  let vlSpec = JSON.parse(data["vega-lite"]);
-  vlSpec.width = "container";
-  vlSpec.height = "container";
-  vlSpec.background = "transparent";
-  vlSpec["usermeta"] = { embedOptions: { renderer: "svg" } };
-  // render
-  vegaEmbed(container.node(), vlSpec).then((result) => {
-    const canvas = container.select("svg");
-    // remove other components and re-insert canvas
-    container.select("div").remove();
-    container.select("details").remove();
-    container.node().appendChild(canvas.node());
-    container.style("width", "55%");
-  });
-};
-
-// let pageData changes with page number
-watch(currentPageNumber, (newVal, oldVal) => {
-  currentPageData.value = getPageData(newVal);
-});
-
-// draw vl-graph based on new page data
-watch(currentPageData, (newVal, oldVal) => {
-  nextTick(() => {
-    vlContainers.value.forEach((containerRef, index) => {
-      const data = newVal[index];
-      drawPanelVl(d3.select(containerRef), data);
-    });
-  });
-});
-
-// watch(panelData, (newVal, oldVal) => {
-//   if (newVal) {
-//   }
-// });
-
 onMounted(() => {
-  const id = props.id;
-  postFunc(id);
-  currentId.value = id;
+  const realId = props.realId;
+  postFunc(realId);
 });
 </script>
 
@@ -173,164 +113,159 @@ onMounted(() => {
 .v-boundary {
   height: 100%;
   position: relative;
+  .icon-box {
+    position: absolute;
+    top: 0;
+    left: -$icon-size-regular - $border-width - 0.6rem;
+    @include flex-box(column);
+    gap: 0.1rem;
+    .icon-border {
+      padding: 0.3rem;
+      border: $border;
+      border-right: none;
+      background-color: $background-color-light;
+      transition: background-color ease-out 0.2s;
+      &:hover {
+        background-color: $primary-color;
+      }
+      .icon {
+        @include icon-style();
+      }
+    }
+  }
 }
-.hide-icon {
-  position: absolute;
-  top: 0;
-  right: 25rem;
-  border: $border;
-  border-right: none;
-  background-color: $background-color-light;
-  @include icon-style();
-}
+
 .panel-container {
   width: 25rem;
   height: 100%;
   z-index: $z-middle;
 
-  background-color: $background-color;
+  background-color: $primary-color-gray;
   border-radius: $border-radius;
   border: $border;
 
   @include flex-box(column);
-  justify-content: space-between;
-  user-select: none;
-  // gap: 1rem;
+  // user-select: none;
+  gap: 1rem;
 
-  .scope-border {
-    @include flex-box();
-    align-items: center;
-    gap: 0.8rem;
-    padding-left: 0.5rem;
-    flex-shrink: 0;
-    flex-grow: 0;
-    height: 6%;
-    overflow-y: hidden;
-    overflow-x: auto;
-  }
-
-  .insight-list-border {
-    flex-grow: 1;
+  .border {
+    width: 100%;
     @include flex-box(column);
-
-    justify-content: space-between;
-    .insight-border {
+    gap: 0.8rem;
+    .title {
+      color: $primary-color;
+      margin: 0.6rem 0 0 0.5rem;
+      font-weight: $font-weight-bold;
+      user-select: none;
+    }
+    .content {
+      @include flex-box(column);
+      align-items: flex-start;
+      gap: 0.4rem;
       width: 100%;
-      height: 33.3%;
-      @include flex-box();
-      justify-content: stretch;
-      align-items: center;
-      border-bottom: $border;
-      padding-right: 1.2rem;
-      padding-left: 0.5rem;
-      transition: all 0.2s ease-out;
-      // border-color: $primary-color;
-      &:first-child {
-        border-top: $border;
-        // border-color: $primary-color;
-      }
-      &:hover {
-        box-shadow: 0rem 0.2rem 0.6rem 0.1rem rgba(#000, 0.26);
-        // background-color: $primary-color;
-      }
+      padding: 0 0.4rem;
+      padding-left: 0.6rem;
 
-      .vl-container {
-        width: 60%;
-        height: 98%;
-        flex-shrink: 0;
-        svg {
-          // background-color: #fff;
-        }
-      }
-      .text-container {
-        background-color: $background-color-light;
-        box-shadow: 0.1rem 0.1rem 0.2rem 0.15rem rgba($primary-color, 0.4);
-
-        // margin-right: 1.2rem;
-        padding: 0.8rem 1rem;
-        border-radius: $border-radius + 0.3rem;
-
-        flex: auto;
-        height: 95%;
-        // border: $border;
-        @include flex-box(column);
-        gap: 0.4rem;
-        font-size: 1.1rem;
-        // transition: background-color 0.2s ease-out;
-
-        .type-box,
-        .score-box {
+      .item-box {
+        width: 100%;
+        @include flex-box();
+        .item {
           @include flex-box();
           align-items: center;
-
-          .title {
-            font-weight: $font-weight-bold;
-            width: 20%;
-            color: $primary-color;
-            // font-size: 1.2rem;
-            transition: color 0.2s ease-out;
-          }
-          .value {
-            padding: 0.2rem 0.5rem;
-            color: rgba($text-color, 0.8);
-            transition: color 0.2s ease-out;
-          }
+          height: 100%;
         }
-        .desc-box {
-          flex-grow: 1;
-          @include flex-box(column);
-          gap: 0.5rem;
-
-          .title {
-            font-weight: $font-weight-bold;
-            color: $primary-color;
-            transition: color 0.2s ease-out;
-            // font-size: 1.2rem;
-          }
-          .value {
-            color: rgba($text-color, 0.8);
-            border: $border-text;
-
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-            flex-grow: 1;
-            transition: color 0.2s ease-out;
-          }
+        .value {
+          color: $primary-color-dark;
         }
-        .btn {
-          background-color: $primary-color;
-          border: none;
-          color: $secondary-color;
+        .label {
           font-weight: $font-weight-bold;
-          padding: 0.3rem;
-          cursor: pointer;
-          transition: all 0.2s ease-out;
-          border-radius: $border-radius;
-          &:hover,
-          &:active {
-            background-color: $primary-color-dark;
-            color: $background-color;
-          }
-        }
-      }
-      &.isSelected {
-        box-shadow: inset 0.5rem 0.3rem 0.8rem -0.3rem rgba($primary-color, 0.5);
-        background-color: rgba($primary-color, 0.1);
-        .text-container {
-          .btn {
-            color: $third-color-light;
-          }
+          user-select: none;
         }
       }
     }
   }
-  .pagination {
-    @include flex-box();
-    align-items: center;
-    justify-content: center;
-    padding: 0.6rem;
-    flex-shrink: 0;
-    flex-grow: 0;
+
+  .scope-border {
+    .title-box {
+      @include flex-box();
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0 0 0.5rem;
+      .title {
+        margin: 0;
+      }
+      .icon {
+        @include icon-style();
+        margin-right: 0.5rem;
+      }
+    }
+    .content {
+      .item-box {
+        border-radius: 0.5rem;
+        background-color: $primary-color-light;
+        padding: 0.2rem;
+        height: 2.6rem;
+        gap: 0.6rem;
+
+        .label {
+          color: $background-color;
+          width: 25%;
+          margin-left: 0.2rem;
+        }
+        .value {
+          background-color: $background-color-light;
+          border: $border-text;
+          flex: auto;
+
+          font-size: 1.3rem;
+          padding-left: 0.5rem;
+        }
+      }
+    }
+  }
+  .detail-border {
+    .content {
+      gap: 0.6rem;
+      .item-box {
+        gap: 0.8rem;
+
+        .label {
+          color: $primary-color;
+        }
+        .value {
+          border: $border-text;
+          border-radius: 0.5rem;
+          padding: 0.3rem;
+          font-size: 1.3rem;
+          background-color: $background-color-light;
+          &.type {
+            color: #fff;
+            border: none;
+            padding: 0.4rem 0.8rem;
+          }
+          &.score {
+          }
+          &.point {
+            background-color: $point-color;
+          }
+          &.shape {
+            background-color: $shape-color;
+          }
+          &.compound {
+            background-color: $compound-color;
+          }
+        }
+
+        &.desc {
+          @include flex-box(column);
+          gap: 0.6rem;
+          .value {
+            width: 95%;
+            padding: 0.5rem;
+          }
+        }
+      }
+    }
   }
 }
 </style>
@@ -340,5 +275,11 @@ onMounted(() => {
   --el-tag-bg-color: #{$primary-color};
   --el-tag-border-color: #{$border-color-text};
   --el-tag-text-color: #{$background-color-dark};
+}
+
+.panel-container {
+  .el-divider {
+    margin: 0;
+  }
 }
 </style>
