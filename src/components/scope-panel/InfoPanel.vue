@@ -25,13 +25,17 @@
       class="panel-container"
       v-loading="isLoading"
       element-loading-text="Fetching data..."
-      element-loading-custom-class="main"
+      element-loading-custom-class="info"
     >
       <div class="detail-page" v-if="curTab === 'detail'">
         <div class="scope-border border">
           <div class="title-box">
             <h2 class="title">Data Scope</h2>
-            <SvgIcon iconName="turn-left" class="icon"></SvgIcon>
+            <SvgIcon
+              iconName="turn-left"
+              @click="setDataScope"
+              class="icon"
+            ></SvgIcon>
           </div>
           <div class="content">
             <div class="item-box" v-for="(value, col) in insightData.scope">
@@ -61,25 +65,46 @@
         </div>
       </div>
       <div class="history-page" v-else-if="curTab === 'history'">
-        <h1>History</h1>
+        <div v-for="node in questionPath" :key="node.id">
+          {{ `id: ${node.id}, question: ${node.question}` }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, watch, ref, onMounted, nextTick } from "vue";
+import { reactive, computed, watch, ref, onMounted, nextTick } from "vue";
 import { baseUrl, postData } from "@/utils/api.js";
 import SvgIcon from "../ui/SvgIcon.vue";
+import { useStore } from "vuex";
 
 /* -------------------------------------------------------------------------- */
 // props & emit
 /* -------------------------------------------------------------------------- */
 const props = defineProps({
   realId: Number,
+  id: Number,
 });
 const realId = props.realId;
+const id = props.id;
 const emit = defineEmits(["hide"]);
+
+/* -------------------------------------------------------------------------- */
+// store settings
+/* -------------------------------------------------------------------------- */
+const store = useStore();
+// set data scope of filter panel
+const setDataScope = () => {
+  store.dispatch("focus/changeDataScope", { ...insightData.scope });
+};
+/* -------------------------------------------------------------------------- */
+// history related
+/* -------------------------------------------------------------------------- */
+const questionPath = computed(() => {
+  const tree = store.getters["treeData"];
+  return tree.getQuesionPath(id);
+});
 
 /* -------------------------------------------------------------------------- */
 // tab switching
@@ -119,6 +144,7 @@ const postFunc = async (id) => {
     const data = await postData(baseUrl + "/panel/id", {
       realId: id,
     });
+
     // assign data to local value
     insightData.scope = data.dataScope;
     insightData.type = data.type;
@@ -150,10 +176,11 @@ onMounted(() => {
     top: 0;
     left: -$icon-size-regular - $border-width - 0.6rem;
     @include flex-box(column);
-    gap: 0.1rem;
+    gap: 0.15rem;
     .icon-border {
       padding: 0.3rem;
       border: $border;
+      // border-color: $primary-color;
       border-right: none;
       background-color: $background-color-light;
       transition: background-color ease-out 0.2s;
@@ -270,12 +297,11 @@ onMounted(() => {
         gap: 0.6rem;
         .item-box {
           gap: 0.8rem;
-
           .label {
             color: $primary-color;
           }
           .value {
-            border: $border-text;
+            border: 0.2rem solid $primary-color-light;
             border-radius: 0.5rem;
             padding: 0.3rem;
             font-size: 1.3rem;

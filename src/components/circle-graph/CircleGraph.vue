@@ -14,6 +14,7 @@
         v-if="showPanel"
         v-show="!hasHide"
         :realId="panelNode['real_id']"
+        :id="panelNode.id"
         @hide="hidePanel"
       ></InfoPanel>
     </transition>
@@ -103,11 +104,11 @@ import { ForceGraph } from "@/utils/graphGenerator.js";
 import InfoPanel from "@/components/scope-panel/InfoPanel.vue";
 import QuestionBar from "@/components/question-bar/QuestionBar.vue";
 import { useStore } from "vuex";
-import { ElMessage } from "element-plus";
+
 /* -------------------------------------------------------------------------- */
 // emit event
 /* -------------------------------------------------------------------------- */
-const emit = defineEmits(["changeFocusNode"]);
+// const emit = defineEmits(["changeFocusNode"]);
 /* -------------------------------------------------------------------------- */
 // get graphData from vuex
 /* -------------------------------------------------------------------------- */
@@ -341,8 +342,8 @@ watch(focusEmitNode, (newVal) => {
         },
         panelNode
       );
-      // emit event to parent component, use real_id
-      emit("changeFocusNode", -1);
+      // call dispatch func to change store's focus id
+      store.dispatch("focus/changeRealId", -1);
     }
   } else {
     // check whether oldNode element exit and whether focus node was change, if was, cancel its css
@@ -355,8 +356,8 @@ watch(focusEmitNode, (newVal) => {
       toggleFocusCSS(newVal, true);
       // set panel node
       myTool.reactiveAssign(newVal, panelNode);
-      // emit event to parent component
-      emit("changeFocusNode", newVal["real_id"]);
+      // call dispatch func to change store's focus id
+      store.dispatch("focus/changeRealId", newVal["real_id"]);
       // switch panel status
       toggleShowPanel();
     }

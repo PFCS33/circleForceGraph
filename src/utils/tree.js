@@ -1,7 +1,7 @@
 class TreeNode {
   // every node's value must has a 'id' key
   constructor(value, parent = null, children = []) {
-    // object, structure: {id, layer}
+    // object, structure: {id, layer, question}
     this.value = value;
     // list
     this.children = children;
@@ -49,10 +49,11 @@ class Tree {
     // set correct layer key to targetValue
     targetValues.forEach((targetValue) => {
       targetValue.layer = sourceNode.value.layer + 1;
-      // construct treenode for tarfet
+      // construct treenode for target
       const targetNode = new TreeNode(targetValue, sourceNode);
       // add child
       sourceNode.children.push(targetNode);
+      console.log("add", targetNode);
       // set nodeIdMap
       this.nodeIdMap.set(targetValue.id, targetNode);
     });
@@ -123,6 +124,25 @@ class Tree {
         });
       }
       return descendantList;
+    }
+  }
+
+  getQuesionPath(nodeId) {
+    const node = this.nodeIdMap.get(nodeId);
+    return getQuesionPathByNode(node);
+
+    function getQuesionPathByNode(node) {
+      let curNode = node;
+      let res = [];
+      while (curNode) {
+        const question = curNode.value.question;
+        res.push({
+          id: curNode.value.id,
+          question: question ? question : null,
+        });
+        curNode = curNode.parent;
+      }
+      return res;
     }
   }
 }

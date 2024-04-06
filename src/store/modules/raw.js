@@ -50,15 +50,17 @@ export default {
           });
       });
     },
-    // post quesition ,and then add nodes in tree & update graph
+    // post question ,and then add nodes in tree & update graph
     postQuestion(context, payload) {
       return new Promise((resolve, reject) => {
         postData(baseUrl + "/question/data", payload)
           .then((data) => {
             const newNodeInfo = data.node;
+
             context.dispatch("addTreeNode", {
               parent: payload.id,
               children: newNodeInfo,
+              question: payload.content,
             });
             // update graph data
             context.dispatch("updateGraphDataByTree", newNodeInfo);
@@ -86,6 +88,7 @@ export default {
             context.dispatch("addTreeNode", {
               parent: 0,
               children: newNodeInfo,
+              question: null,
             });
             // update graph data
             context.dispatch("updateGraphDataByTree", newNodeInfo);
@@ -105,6 +108,7 @@ export default {
       const colInfoMap = new Map();
       for (const prop in colRawData) {
         if (Object.hasOwn(colRawData, prop)) {
+          // colRawData[prop].unshift("*");
           colInfoMap.set(prop, colRawData[prop]);
         }
       }
@@ -117,6 +121,7 @@ export default {
       context.dispatch("addTreeNode", {
         parent: 0,
         children: newNodeInfo,
+        question: null,
       });
       // update graph data
       context.dispatch("updateGraphDataByTree", newNodeInfo);
@@ -131,10 +136,13 @@ export default {
     */
     addTreeNode(context, payload) {
       const tree = context.getters["treeData"];
+
       tree.addNodes(
         payload.parent,
         payload.children.map((d) => ({
+          // refer to visual id
           id: d.id,
+          question: payload.question,
         }))
       );
     },

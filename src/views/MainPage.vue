@@ -10,10 +10,10 @@
     </div>
     <div class="content-box">
       <div class="filter-box">
-        <FilterPanel :curRealId="curRealId"></FilterPanel>
+        <FilterPanel></FilterPanel>
       </div>
       <div class="graph-box">
-        <CircleGraph @changeFocusNode="changeFocusNode"></CircleGraph>
+        <CircleGraph></CircleGraph>
       </div>
     </div>
   </div>
@@ -103,6 +103,9 @@ onMounted(() => {
 
   &.main {
     --el-mask-color: #{rgba($background-color-light, 0.9)};
+  }
+  &.info {
+    --el-mask-color: #{$background-color-light, };
   }
 }
 </style>

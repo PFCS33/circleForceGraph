@@ -51,7 +51,7 @@
           <div
             :class="[
               'insight-border',
-              { isSelected: props.curRealId === insightData['real_id'] },
+              { isSelected: curRealId === insightData['real_id'] },
             ]"
             v-loading="isAddingNode && curAddingId === insightData['real_id']"
             element-loading-text="Adding Node..."
@@ -106,10 +106,22 @@ import { useStore } from "vuex";
 import vegaEmbed from "vega-embed";
 import { baseUrl, postData } from "@/utils/api.js";
 import SvgIcon from "../ui/SvgIcon.vue";
+import { reactiveAssign } from "@/utils/general.js";
+/* -------------------------------------------------------------------------- */
+// get store data
+/* -------------------------------------------------------------------------- */
 const store = useStore();
-const props = defineProps({
-  curRealId: Number,
+const curRealId = computed(() => {
+  return store.getters["focus/realId"];
 });
+const curDataScope = computed(() => {
+  return store.getters["focus/dataScope"];
+});
+
+watch(curDataScope, (newVal, oldVal) => {
+  reactiveAssign(newVal, curValues);
+});
+
 /* -------------------------------------------------------------------------- */
 // communicate with backend server
 /* -------------------------------------------------------------------------- */
@@ -226,7 +238,7 @@ watch(colInfoMap, (newVal) => {
   if (newVal) {
     // initialize binding values
     for (const colName of newVal.keys()) {
-      curValues[colName] = null;
+      curValues[colName] = "*";
     }
     isLoading.value = false;
   } else {
@@ -355,7 +367,7 @@ watch(curValues, (newVal) => {
           position: relative;
 
           &:hover {
-            box-shadow: 0rem 0.5rem 0.5rem 0rem rgba($primary-color, 0.26);
+            box-shadow: 0.1rem 0.5rem 0.5rem 0rem rgba($primary-color, 0.26);
             // background-color: $primary-color;
             z-index: $z-middle;
           }
@@ -410,7 +422,7 @@ watch(curValues, (newVal) => {
           }
 
           &.isSelected {
-            box-shadow: inset 0.5rem 0.3rem 0.8rem 0.1rem
+            box-shadow: inset 0.3rem 0.6rem 0.8rem 0.1rem
               rgba($primary-color, 0.26);
             background-color: rgba($primary-color-light, 0.1);
             .text-container {
@@ -443,7 +455,6 @@ watch(curValues, (newVal) => {
   --el-fill-color-blank: rgba($primary-color, 0.05);
   .el-pager {
     justify-content: center;
-
     flex: 0.8;
   }
 }

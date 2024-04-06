@@ -66,11 +66,13 @@ const sendQuestion = () => {
     background-color: #fff;
     position: relative;
     padding: 0.7rem;
+    padding-right: 4rem;
 
     .icon.send {
       position: absolute;
       bottom: 0.5rem;
       right: 1.2rem;
+      z-index: 2008;
     }
   }
   .icon {
@@ -93,8 +95,8 @@ const sendQuestion = () => {
   bottom: 0;
   .el-textarea__inner {
     @include fancier-scroll-bar();
-    // width: 100%;
-    padding-right: $icon-size-large + 0.5rem;
+    // max-width: 100%;
+    // margin-right: $icon-size-large + 0.5rem;
     border: none;
     box-shadow: none;
     background-color: transparent;
