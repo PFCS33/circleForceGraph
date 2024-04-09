@@ -53,7 +53,7 @@ class Tree {
       const targetNode = new TreeNode(targetValue, sourceNode);
       // add child
       sourceNode.children.push(targetNode);
-      console.log("add", targetNode);
+
       // set nodeIdMap
       this.nodeIdMap.set(targetValue.id, targetNode);
     });

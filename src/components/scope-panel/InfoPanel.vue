@@ -65,9 +65,10 @@
         </div>
       </div>
       <div class="history-page" v-else-if="curTab === 'history'">
-        <div v-for="node in questionPath" :key="node.id">
+        <!-- <div v-for="node in questionPath" :key="node.id">
           {{ `id: ${node.id}, question: ${node.question}` }}
-        </div>
+        </div> -->
+        <svg id="pg-container"></svg>
       </div>
     </div>
   </div>
@@ -78,6 +79,7 @@ import { reactive, computed, watch, ref, onMounted, nextTick } from "vue";
 import { baseUrl, postData } from "@/utils/api.js";
 import SvgIcon from "../ui/SvgIcon.vue";
 import { useStore } from "vuex";
+import { PathGraph } from "@/utils/pathGenerator";
 
 /* -------------------------------------------------------------------------- */
 // props & emit
@@ -105,6 +107,7 @@ const questionPath = computed(() => {
   const tree = store.getters["treeData"];
   return tree.getQuesionPath(id);
 });
+const pathGraph = ref(null);
 
 /* -------------------------------------------------------------------------- */
 // tab switching
@@ -121,6 +124,12 @@ watch(curTab, (newVal, oldVal) => {
         postFunc(realId);
         break;
       case "history":
+        nextTick(() => {
+          pathGraph.value = new PathGraph("#pg-container", questionPath);
+
+          pathGraph.value.createGraph();
+        });
+
         break;
     }
   }
@@ -337,6 +346,11 @@ onMounted(() => {
         }
       }
     }
+  }
+  .history-page {
+    height: 100%;
+    width: 100%;
+    margin: 1rem;
   }
 }
 </style>
