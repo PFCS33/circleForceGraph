@@ -103,10 +103,10 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick } from "vue";
 import { useStore } from "vuex";
-import vegaEmbed from "vega-embed";
 import { baseUrl, postData } from "@/utils/api.js";
 import SvgIcon from "../ui/SvgIcon.vue";
 import { reactiveAssign } from "@/utils/general.js";
+import { drawVl } from "@/utils/vlDrawer.js";
 /* -------------------------------------------------------------------------- */
 // get store data
 /* -------------------------------------------------------------------------- */
@@ -189,24 +189,6 @@ const getPageData = (number) => {
   return insightList.value.slice(start, end);
 };
 
-// draw vl-graph inside the panel
-const drawPanelVl = (container, data) => {
-  // get vl spec, and add config
-  let vlSpec = JSON.parse(data["vega-lite"]);
-  vlSpec.width = "container";
-  vlSpec.height = "container";
-  vlSpec.background = "transparent";
-  vlSpec["usermeta"] = { embedOptions: { renderer: "svg" } };
-  // render
-  vegaEmbed(container.node(), vlSpec).then((result) => {
-    const canvas = container.select("svg");
-    // remove other components and re-insert canvas
-    container.select("div").remove();
-    container.select("details").remove();
-    container.node().appendChild(canvas.node());
-  });
-};
-
 // let pageData changes with page number
 watch(currentPageNumber, (newVal, oldVal) => {
   currentPageData.value = getPageData(newVal);
@@ -220,7 +202,7 @@ watch(currentPageData, (newVal, oldVal) => {
       const realId = +containerRef.getAttribute("id");
       const data = newVal.find((item) => item["real_id"] === realId);
       // console.log(data);
-      drawPanelVl(d3.select(containerRef), data);
+      drawVl(d3.select(containerRef), data);
     });
   });
 });

@@ -23,7 +23,10 @@
     </div>
     <div
       class="panel-container"
-      v-loading="isLoading"
+      v-loading="
+        (curTab === 'detail' && isDetailLoading) ||
+        (curTab === 'history' && isHisLoading)
+      "
       element-loading-text="Fetching data..."
       element-loading-custom-class="info"
     >
@@ -107,6 +110,7 @@ const questionPath = computed(() => {
   const tree = store.getters["treeData"];
   return tree.getQuesionPath(id);
 });
+
 const pathGraph = ref(null);
 
 /* -------------------------------------------------------------------------- */
@@ -125,9 +129,7 @@ watch(curTab, (newVal, oldVal) => {
         break;
       case "history":
         nextTick(() => {
-          pathGraph.value = new PathGraph("#pg-container", questionPath);
-
-          pathGraph.value.createGraph();
+          getVlSpec(questionPath.value.map((d) => d.id));
         });
 
         break;
@@ -138,7 +140,30 @@ watch(curTab, (newVal, oldVal) => {
 /* -------------------------------------------------------------------------- */
 // communicate with backend server
 /* -------------------------------------------------------------------------- */
-const isLoading = ref(true);
+// history page
+const isHisLoading = ref(true);
+// get vl-spec from backend server, and merge data to form path graph
+const getVlSpec = (ids) => {
+  postData(baseUrl + "/panel/ids", {
+    ids: ids,
+  })
+    .then((vlSpec) => {
+      pathGraph.value = new PathGraph(
+        "#pg-container",
+        // add vega-lite attr in question path
+        questionPath.value.map((d, idx) => ({ ...d, "vega-lite": vlSpec[idx] }))
+      );
+      pathGraph.value.createGraph();
+      // show page
+      isHisLoading.value = false;
+    })
+    .catch((e) => {
+      ElMessage.error(`Panel Error: ${e.message}`);
+    });
+};
+
+// detail page
+const isDetailLoading = ref(true);
 const insightData = reactive({
   scope: null,
   type: null,
@@ -162,7 +187,7 @@ const postFunc = async (id) => {
     insightData.description = data.description;
 
     // show page
-    isLoading.value = false;
+    isDetailLoading.value = false;
   } catch (e) {
     ElMessage.error(`Panel Error: ${e.message}`);
   }
@@ -350,7 +375,8 @@ onMounted(() => {
   .history-page {
     height: 100%;
     width: 100%;
-    margin: 1rem;
+    padding: 1rem;
+    // overflow-y: auto;
   }
 }
 </style>
