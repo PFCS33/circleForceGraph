@@ -1,7 +1,9 @@
 import vegaEmbed from "vega-embed";
+import EventEmitter from "@/utils/eventEmitter.js";
 /* generate a force svg graph */
-class ForceGraph {
+class ForceGraph extends EventEmitter {
   constructor(containerId, nodeData, linkData) {
+    super();
     // viewbox of container svg
     this.containerViewWidth = 1920;
     this.containerViewHeight = 1080;
@@ -22,8 +24,7 @@ class ForceGraph {
     this.svgContainer = this.setSvgContainer(containerId);
     this.simulation = null;
     // set initial value of max_layer
-    // set event listeners, to reate with .vue file
-    this.eventListeners = {};
+
     // other defalt configs
     this.durationTime = 150;
     this.defaltForceConfig = {
@@ -846,23 +847,6 @@ class ForceGraph {
     });
   }
   // belows are small utils functions
-  // register callback functions of certain event
-  on(event, callback) {
-    const eventListeners = this.eventListeners;
-    if (!eventListeners[event]) {
-      // if do not have any callback, register an empty array
-      eventListeners[event] = [];
-    }
-    eventListeners[event].push(callback);
-  }
-
-  // emit event, and call all callbacks to process
-  emit(event, paylaod) {
-    const eventListeners = this.eventListeners;
-    if (eventListeners[event]) {
-      eventListeners[event].forEach((callback) => callback(paylaod));
-    }
-  }
 
   // compute R of certain layer
   getLayerR(

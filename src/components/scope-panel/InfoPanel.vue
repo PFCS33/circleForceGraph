@@ -106,12 +106,15 @@ const setDataScope = () => {
 /* -------------------------------------------------------------------------- */
 // history related
 /* -------------------------------------------------------------------------- */
+const pathGraph = ref(null);
 const questionPath = computed(() => {
   const tree = store.getters["treeData"];
   return tree.getQuesionPath(id);
 });
-
-const pathGraph = ref(null);
+const handleHover = (payload) => {
+  const id = payload.id;
+  store.dispatch("hover/changeId", id);
+};
 
 /* -------------------------------------------------------------------------- */
 // tab switching
@@ -142,6 +145,7 @@ watch(curTab, (newVal, oldVal) => {
 /* -------------------------------------------------------------------------- */
 // history page
 const isHisLoading = ref(true);
+const svgContainerId = "#pg-container";
 // get vl-spec from backend server, and merge data to form path graph
 const getVlSpec = (ids) => {
   postData(baseUrl + "/panel/ids", {
@@ -149,10 +153,12 @@ const getVlSpec = (ids) => {
   })
     .then((vlSpec) => {
       pathGraph.value = new PathGraph(
-        "#pg-container",
+        svgContainerId,
         // add vega-lite attr in question path
         questionPath.value.map((d, idx) => ({ ...d, "vega-lite": vlSpec[idx] }))
       );
+      // add event listener
+      pathGraph.value.on("node-hover", handleHover);
       pathGraph.value.createGraph();
       // show page
       isHisLoading.value = false;

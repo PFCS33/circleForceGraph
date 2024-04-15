@@ -2,6 +2,8 @@ import { createStore } from "vuex";
 // import authModule from "./modules/auth";
 import rawDataModule from "./modules/raw";
 import focusModule from "./modules/focus";
+import hoverModule from "./modules/hover";
+
 // import treeDataModule from "./modules/tree";
 // import graphDataModule from "./modules/graph";
 // import colDataModule from "./modules/col";
@@ -10,6 +12,7 @@ const store = createStore({
     // auth: authModule,
     raw: rawDataModule,
     focus: focusModule,
+    hover: hoverModule,
     // tree: treeDataModule,
     // graph: graphDataModule,
     // col: colDataModule,

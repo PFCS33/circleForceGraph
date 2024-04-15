@@ -126,6 +126,7 @@ import { useStore } from "vuex";
 /* -------------------------------------------------------------------------- */
 const store = useStore();
 let forceGraph = null;
+const svgContainerId = "#svg-container";
 // data from vuex
 const graphData = computed(() => store.getters["graphData"]);
 watch(graphData, (newVal, oldVal) => {
@@ -134,7 +135,7 @@ watch(graphData, (newVal, oldVal) => {
     const linkData = newVal.link;
     if (forceGraph === null) {
       // initialization
-      forceGraph = new ForceGraph("#svg-container", nodeData, linkData);
+      forceGraph = new ForceGraph(svgContainerId, nodeData, linkData);
       forceGraph.on("node-click", setFocusEmitNode);
       forceGraph.on("question-click", setQuestionEmitNode);
       forceGraph.on("node-delete", deleteNode);
@@ -173,6 +174,54 @@ const deleteNode = (id) => {
     })
     .catch(() => {});
 };
+/* -------------------------------------------------------------------------- */
+// hover node related （from Info Panel）
+/* -------------------------------------------------------------------------- */
+const hoverNodeId = computed(() => store.getters["hover/id"]);
+watch(hoverNodeId, (newVal, oldVal) => {
+  const id = newVal || oldVal;
+
+  const nodeG = d3
+    .select(svgContainerId)
+    .select(".topg-node")
+    .selectChildren("g")
+    .filter((d) => d.id === id);
+
+  const circleG = nodeG.selectChild(".circle-container");
+  const vlG = nodeG.selectChild(".vl-container");
+  const showVL = nodeG.datum().showVL;
+
+  if (newVal) {
+    if (showVL) {
+      toggleHoverCSS(vlG, "vl", true);
+    } else {
+      toggleHoverCSS(circleG, "circle", true);
+    }
+  } else {
+    if (showVL) {
+      toggleHoverCSS(vlG, "vl", false);
+    } else {
+      toggleHoverCSS(circleG, "circle", false);
+    }
+  }
+
+  function toggleHoverCSS(nodeG, mode, state, duration = 200) {
+    let transformStr = nodeG.style("transform");
+    transformStr = transformStr === "none" ? "" : transformStr;
+    if (state) {
+      const scale = mode === "circle" ? 1.4 : 1.1;
+      nodeG
+        .transition()
+        .duration(duration)
+        .style("transform", transformStr + ` scale(${scale})`);
+    } else {
+      let formerStr = transformStr.split("scale")[0];
+      formerStr = formerStr === "" ? "none" : formerStr;
+      nodeG.transition().duration(duration).style("transform", formerStr);
+    }
+  }
+});
+
 /* -------------------------------------------------------------------------- */
 // panel related
 /* -------------------------------------------------------------------------- */
@@ -439,7 +488,7 @@ onUnmounted(() => {
   .circle-container {
     transition: transform 0.2s ease-out;
     &.has-hover {
-      transform: scale(1.5);
+      transform: scale(1.5) !important;
     }
   }
   .vl-container {

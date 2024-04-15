@@ -1,7 +1,8 @@
 import { drawVl } from "@/utils/vlDrawer";
-
-class PathGraph {
+import EventEmitter from "@/utils/eventEmitter.js";
+class PathGraph extends EventEmitter {
   constructor(containerId, pathList) {
+    super();
     this.containerViewWidth = 300;
     this.containerViewHeight = 600;
     this.pathList = pathList;
@@ -15,7 +16,8 @@ class PathGraph {
       vlSize: this.containerViewHeight / 8,
       lineColor: "#64748b",
       // start node
-      imageGap: 30,
+      imgSize: 30,
+      startR: 50,
       // border
       borderStroke: "#8996a9",
       borderWidth: 2,
@@ -62,7 +64,8 @@ class PathGraph {
     const itLinkTopG = svgContainer.selectChild(".top-g-link");
     const blockTopG = svgContainer.selectChild(".top-g-block");
     const num = pathList.length;
-    console.log(pathList);
+    const self = this;
+
     itLinkTopG
       .selectChildren("g")
       .data(d3.range(0, pathList.length - 1), (d) => d)
@@ -166,22 +169,36 @@ class PathGraph {
 
           // vega-lite graph
           const nodeGs = topGs.append("g").attr("class", "node-container");
+          // add cursor event handler
+          topGs
+            .filter((d) => d !== num - 1)
+            .style("cursor", "pointer")
+            .on("mouseenter", function (_event, idx) {
+              self.emit("node-hover", {
+                id: pathList[idx].id,
+              });
+            })
+            .on("mouseleave", function (_event, idx) {
+              self.emit("node-hover", {
+                id: null,
+              });
+            });
           // draw special start point
           const startNodeG = nodeGs.filter((d) => d === num - 1);
           startNodeG
             .append("circle")
-            .attr("r", graphConfig.vlSize / 2)
+            .attr("r", graphConfig.startR / 2)
             .attr("cx", graphConfig.vlSize / 2)
-            .attr("cy", graphConfig.vlSize / 2)
+            .attr("cy", graphConfig.rectHeight / 2)
             .attr("fill", "#64748b");
           startNodeG
             .append("image")
             .attr("href", "/pic/insight-icon/start.png")
-            .attr("width", graphConfig.vlSize - graphConfig.imageGap)
-            .attr("height", graphConfig.vlSize - graphConfig.imageGap)
-            .attr("x", graphConfig.imageGap / 2)
-            .attr("y", graphConfig.imageGap / 2);
-
+            .attr("width", graphConfig.imgSize)
+            .attr("height", graphConfig.imgSize)
+            .attr("x", graphConfig.rectHeight / 2 - graphConfig.imgSize / 2)
+            .attr("y", graphConfig.rectHeight / 2 - graphConfig.imgSize / 2);
+          // draw vl graph
           const vlBorders = nodeGs
             .filter((d) => d !== num - 1)
             .append("rect")
@@ -193,10 +210,11 @@ class PathGraph {
             .attr("stroke-width", graphConfig.borderWidth)
             .attr("stroke", graphConfig.borderStroke);
 
-          const vlGs = topGs
+          const vlGs = nodeGs
             .filter((d) => d !== num - 1)
             .append("g")
             .attr("class", "vl-container");
+
           vlGs.each(function (d) {
             const data = pathList[d];
             const nodeG = d3.select(this);
