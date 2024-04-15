@@ -231,10 +231,9 @@ class PathGraph extends EventEmitter {
           const innerLines = topGs
             .filter((d) => d != 0)
             .append("path")
-            .attr(
-              "d",
+            .attr("d", (d) =>
               this.calcArrowPath(
-                graphConfig.vlSize,
+                d === num - 1 ? graphConfig.startR : graphConfig.vlSize,
                 graphConfig.vlSize + graphConfig.hGap,
                 graphConfig.rectHeight / 2,
                 graphConfig.rectHeight / 2

@@ -206,18 +206,25 @@ watch(hoverNodeId, (newVal, oldVal) => {
   }
 
   function toggleHoverCSS(nodeG, mode, state, duration = 200) {
-    let transformStr = nodeG.style("transform");
-    transformStr = transformStr === "none" ? "" : transformStr;
-    if (state) {
-      const scale = mode === "circle" ? 1.4 : 1.1;
-      nodeG
-        .transition()
-        .duration(duration)
-        .style("transform", transformStr + ` scale(${scale})`);
-    } else {
-      let formerStr = transformStr.split("scale")[0];
-      formerStr = formerStr === "" ? "none" : formerStr;
-      nodeG.transition().duration(duration).style("transform", formerStr);
+    let transformStr = null;
+    let scale = 1;
+    switch (mode) {
+      case "circle":
+        if (state) {
+          nodeG.classed("has-hover", true);
+        } else {
+          nodeG.classed("has-hover", false);
+        }
+        break;
+      case "vl":
+        scale = 1.1;
+        if (state) {
+          transformStr = nodeG.style("transform") + ` scale(${scale})`;
+        } else {
+          transformStr = nodeG.style("transform").split("scale")[0];
+        }
+        nodeG.transition().duration(duration).style("transform", transformStr);
+        break;
     }
   }
 });
@@ -488,7 +495,7 @@ onUnmounted(() => {
   .circle-container {
     transition: transform 0.2s ease-out;
     &.has-hover {
-      transform: scale(1.5) !important;
+      transform: scale(1.5);
     }
   }
   .vl-container {
