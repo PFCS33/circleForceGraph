@@ -128,12 +128,20 @@ watch(curTab, (newVal, oldVal) => {
   if (newVal !== oldVal) {
     switch (newVal) {
       case "detail":
-        postFunc(realId);
+        if (!hasDetailLoad) {
+          getDetailInfo(realId);
+        }
         break;
       case "history":
-        nextTick(() => {
-          getVlSpec(questionPath.value.map((d) => d.id));
-        });
+        if (!hasHisLoad) {
+          nextTick(() => {
+            getVlSpec(questionPath.value.map((d) => d.id));
+          });
+        } else {
+          nextTick(() => {
+            pathGraph.value.createGraph();
+          });
+        }
 
         break;
     }
@@ -146,8 +154,10 @@ watch(curTab, (newVal, oldVal) => {
 // history page
 const isHisLoading = ref(true);
 const svgContainerId = "#pg-container";
+let hasHisLoad = false;
 // get vl-spec from backend server, and merge data to form path graph
 const getVlSpec = (ids) => {
+  isHisLoading.value = true;
   postData(baseUrl + "/panel/ids", {
     ids: ids,
   })
@@ -162,6 +172,7 @@ const getVlSpec = (ids) => {
       pathGraph.value.createGraph();
       // show page
       isHisLoading.value = false;
+      hasHisLoad = true;
     })
     .catch((e) => {
       ElMessage.error(`Panel Error: ${e.message}`);
@@ -177,9 +188,10 @@ const insightData = reactive({
   score: null,
   description: null,
 });
+let hasDetailLoad = false;
 
 // detail page: get data scope and description about focus insight
-const postFunc = async (id) => {
+const getDetailInfo = async (id) => {
   try {
     const data = await postData(baseUrl + "/panel/id", {
       realId: id,
@@ -194,6 +206,7 @@ const postFunc = async (id) => {
 
     // show page
     isDetailLoading.value = false;
+    hasDetailLoad = true;
   } catch (e) {
     ElMessage.error(`Panel Error: ${e.message}`);
   }

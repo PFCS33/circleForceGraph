@@ -6,7 +6,9 @@ class PathGraph extends EventEmitter {
     this.containerViewWidth = 300;
     this.containerViewHeight = 600;
     this.pathList = pathList;
-    this.svgContainer = this.setSvgContainer(containerId);
+    this.containerId = containerId;
+    this.svgContainer = null;
+
     this.graphConfig = {
       hGap: this.containerViewWidth / 4,
       vGap: 30,
@@ -48,7 +50,8 @@ class PathGraph extends EventEmitter {
   }
 
   createGraph() {
-    const svgContainer = this.svgContainer;
+    const svgContainer = this.setSvgContainer(this.containerId);
+    this.svgContainer = svgContainer;
     // append the top g node first
     // inter-link
     const itLinkTopG = svgContainer.append("g").attr("class", "top-g-link");
