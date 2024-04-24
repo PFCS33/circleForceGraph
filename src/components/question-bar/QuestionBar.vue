@@ -38,7 +38,6 @@ const { queryId } = defineProps({
 const content = ref(null);
 const sendQuestion = () => {
   emit("query", {
-    id: queryId,
     content: content.value,
   });
   // reset content

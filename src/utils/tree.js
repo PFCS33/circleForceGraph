@@ -25,6 +25,7 @@ class Tree {
   constructor() {
     this.root = new TreeNode({
       id: 0,
+      real_id: 0,
       layer: 0,
     });
     // record id-value mapping

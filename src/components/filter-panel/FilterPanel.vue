@@ -103,7 +103,7 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick } from "vue";
 import { useStore } from "vuex";
-import { baseUrl, postData } from "@/utils/api.js";
+import { getInsights } from "@/api/panel";
 import SvgIcon from "../ui/SvgIcon.vue";
 import { reactiveAssign } from "@/utils/general.js";
 import { drawVl } from "@/utils/vlDrawer.js";
@@ -232,11 +232,9 @@ watch(curValues, (newVal) => {
   // everytime filter change. post scope to get new data
   isLoadingPost.value = true;
 
-  postData(baseUrl + "/filter/scope", {
-    scope: newVal,
-  })
-    .then((data) => {
-      handlePostData(data);
+  getInsights(newVal)
+    .then((res) => {
+      handlePostData(res.data);
     })
     .catch((e) => {
       ElMessage.error(`Fetch Scope Data Error: ${e.message}`);

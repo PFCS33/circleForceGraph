@@ -79,7 +79,7 @@
 
 <script setup>
 import { reactive, computed, watch, ref, onMounted, nextTick } from "vue";
-import { baseUrl, postData } from "@/utils/api.js";
+import { getNodeDetail, getVlSpec } from "@/api/panel";
 import SvgIcon from "../ui/SvgIcon.vue";
 import { useStore } from "vuex";
 import { PathGraph } from "@/utils/pathGenerator";
@@ -135,7 +135,7 @@ watch(curTab, (newVal, oldVal) => {
       case "history":
         if (!hasHisLoad) {
           nextTick(() => {
-            getVlSpec(questionPath.value.map((d) => d.id));
+            initVlSpec(questionPath.value.map((d) => d["real_id"]));
           });
         } else {
           nextTick(() => {
@@ -156,12 +156,11 @@ const isHisLoading = ref(true);
 const svgContainerId = "#pg-container";
 let hasHisLoad = false;
 // get vl-spec from backend server, and merge data to form path graph
-const getVlSpec = (ids) => {
+const initVlSpec = (ids) => {
   isHisLoading.value = true;
-  postData(baseUrl + "/panel/ids", {
-    ids: ids,
-  })
-    .then((vlSpec) => {
+  getVlSpec(ids)
+    .then((res) => {
+      const vlSpec = res.data;
       pathGraph.value = new PathGraph(
         svgContainerId,
         // add vega-lite attr in question path
@@ -193,9 +192,8 @@ let hasDetailLoad = false;
 // detail page: get data scope and description about focus insight
 const getDetailInfo = async (id) => {
   try {
-    const data = await postData(baseUrl + "/panel/id", {
-      realId: id,
-    });
+    const res = await getNodeDetail(id);
+    const data = res.data;
 
     // assign data to local value
     insightData.scope = data.dataScope;

@@ -464,6 +464,7 @@ class ForceGraph extends EventEmitter {
               // emit question click event
               self.emit("question-click", {
                 id: data.id,
+                real_id: data["real_id"],
                 element: topG,
               });
               // change data
@@ -585,6 +586,7 @@ class ForceGraph extends EventEmitter {
               });
               self.emit("question-click", {
                 id: data.id,
+                real_id: data["real_id"],
                 element: topG,
               });
             });
@@ -626,6 +628,7 @@ class ForceGraph extends EventEmitter {
               // emit empty node, clear question status
               self.emit("question-click", {
                 id: data.id,
+                real_id: data["real_id"],
                 element: null,
               });
               // reset fixed status of node, if it was fixed
@@ -670,6 +673,7 @@ class ForceGraph extends EventEmitter {
               // emit question click event
               self.emit("question-click", {
                 id: data.id,
+                real_id: data["real_id"],
                 element: topG,
               });
             });

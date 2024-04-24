@@ -20,7 +20,7 @@ const baseUrl = "http://localhost:3000";
  * wrap to return a new promise
  * resolve when get real response's data
  */
-function fetchData(url) {
+function fetchData({ url }) {
   return new Promise((resolve, reject) => {
     fetch(url)
       .then((res) => {
@@ -38,7 +38,7 @@ function fetchData(url) {
 }
 
 // Post
-function postData(url, data = {}) {
+function postData({ url, data }) {
   return new Promise((resolve, reject) => {
     fetch(url, {
       method: "POST",

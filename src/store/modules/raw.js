@@ -1,5 +1,7 @@
-import { baseUrl, fetchData, postData } from "@/utils/api";
 import { Tree } from "@/utils/tree";
+import { getGraphData } from "@/api/graph";
+import { getNodeId } from "@/api/filter";
+import { getNextStep } from "@/api/question";
 
 export default {
   state() {
@@ -38,8 +40,9 @@ export default {
     // load raw data and process it
     initRawData(context, paylaod) {
       return new Promise((resolve, reject) => {
-        fetchData(baseUrl + "/graph/data")
-          .then((rawData) => {
+        getGraphData()
+          .then((res) => {
+            const rawData = res.data;
             context.dispatch("processRawData", rawData);
             resolve({
               message: "Calculation complete.",
@@ -53,10 +56,10 @@ export default {
     // post question ,and then add nodes in tree & update graph
     postQuestion(context, payload) {
       return new Promise((resolve, reject) => {
-        postData(baseUrl + "/question/data", payload)
-          .then((data) => {
+        getNextStep(payload)
+          .then((res) => {
+            const data = res.data;
             const newNodeInfo = data.node;
-
             context.dispatch("addTreeNode", {
               parent: payload.id,
               children: newNodeInfo,
@@ -76,9 +79,9 @@ export default {
     // add new node from filter panel
     addNewNode(context, payload) {
       return new Promise((resolve, reject) => {
-        fetchData(baseUrl + "/filter/id")
-          .then((data) => {
-            const id = data.id;
+        getNodeId()
+          .then((res) => {
+            const id = res.data.id;
             const newNodeInfo = [
               {
                 ...payload,
@@ -142,6 +145,7 @@ export default {
         payload.children.map((d) => ({
           // refer to visual id
           id: d.id,
+          real_id: d["real_id"],
           question: payload.question,
         }))
       );

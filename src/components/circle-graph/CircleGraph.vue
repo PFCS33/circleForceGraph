@@ -27,6 +27,7 @@
         @close="
           setQuestionEmitNode({
             id: questionNode.id,
+            real_id: questionNode['real_id'],
             element: null,
           })
         "
@@ -280,10 +281,12 @@ const closeShowPanel = () => {
 const showQsBar = ref(false);
 const questionEmitNode = reactive({
   id: -1,
+  real_id: -1,
   element: null,
 });
 const questionNode = reactive({
   id: -1,
+  real_id: -1,
   element: null,
 });
 watch(questionEmitNode, (newVal) => {
@@ -346,7 +349,10 @@ const handleQuery = (paylaod) => {
     duration: 1500,
   });
   store // call post func in vuex
-    .dispatch("postQuestion", paylaod)
+    .dispatch("postQuestion", {
+      id: questionNode["real_id"],
+      content: paylaod.content,
+    })
     .then((res) => {
       ElMessage.success(res.message);
     })
