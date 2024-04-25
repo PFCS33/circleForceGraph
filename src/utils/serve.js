@@ -1,5 +1,5 @@
 /* provide utils to communicate with server*/
-const baseUrl = "http://localhost:3000";
+const baseUrl = "/server";
 
 /* GET: async - await form
  */

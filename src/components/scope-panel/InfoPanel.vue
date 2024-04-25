@@ -160,7 +160,7 @@ const initVlSpec = (ids) => {
   isHisLoading.value = true;
   getVlSpec(ids)
     .then((res) => {
-      const vlSpec = res.data;
+      const vlSpec = res.data.vlList;
       pathGraph.value = new PathGraph(
         svgContainerId,
         // add vega-lite attr in question path

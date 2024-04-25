@@ -59,7 +59,7 @@ export default {
         getNextStep(payload)
           .then((res) => {
             const data = res.data;
-            const newNodeInfo = data.node;
+            const newNodeInfo = data.nodes;
             context.dispatch("addTreeNode", {
               parent: payload.id,
               children: newNodeInfo,

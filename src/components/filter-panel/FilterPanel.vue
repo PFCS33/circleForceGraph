@@ -103,7 +103,7 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick } from "vue";
 import { useStore } from "vuex";
-import { getInsights } from "@/api/panel";
+import { getInsights } from "@/api/filter";
 import SvgIcon from "../ui/SvgIcon.vue";
 import { reactiveAssign } from "@/utils/general.js";
 import { drawVl } from "@/utils/vlDrawer.js";
@@ -132,7 +132,7 @@ const insightList = ref(null);
 // communicate to server to get other insights in the same data scope
 const handlePostData = (data) => {
   // assign data to local value
-  insightList.value = data.insightList.map((insight) => ({
+  insightList.value = data.insights.map((insight) => ({
     ...insight,
     isDescVisible: false,
   }));
