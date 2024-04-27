@@ -3,7 +3,7 @@ export default {
   namespaced: true,
   state() {
     return {
-      id: null,
+      id: null, // refer to graph ndoe's id
     };
   },
   getters: {

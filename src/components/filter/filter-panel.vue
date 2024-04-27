@@ -101,12 +101,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, nextTick } from "vue";
+import { ref, reactive, computed, watch, nextTick, defineComponent } from "vue";
 import { useStore } from "vuex";
 import { getInsights } from "@/api/filter";
-import SvgIcon from "../ui/SvgIcon.vue";
-import { reactiveAssign } from "@/utils/general.js";
-import { drawVl } from "@/utils/vlDrawer.js";
+import { drawVl } from "@/utils/vega_lite/vlDrawer.js";
+
+defineComponent({
+  name: "FilterPanel",
+});
 /* -------------------------------------------------------------------------- */
 // get store data
 /* -------------------------------------------------------------------------- */
@@ -119,7 +121,7 @@ const curDataScope = computed(() => {
 });
 
 watch(curDataScope, (newVal, oldVal) => {
-  reactiveAssign(newVal, curValues);
+  myTool.reactiveAssign(newVal, curValues);
 });
 
 /* -------------------------------------------------------------------------- */

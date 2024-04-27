@@ -1,5 +1,5 @@
-import { drawVl } from "@/utils/vlDrawer";
-import EventEmitter from "@/utils/eventEmitter.js";
+import { drawVl } from "@/utils/vega_lite/vlDrawer";
+import EventEmitter from "@/utils/common/eventEmitter.js";
 class PathGraph extends EventEmitter {
   constructor(containerId, pathList) {
     super();

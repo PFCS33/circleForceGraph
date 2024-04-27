@@ -1,4 +1,4 @@
-import { baseUrl, fetchData, postData } from "@/utils/serve";
+import { baseUrl, fetchData, postData } from "@/utils/common/serve";
 
 export const getNodeDetail = (data) => {
   return fetchData({

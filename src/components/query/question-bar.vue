@@ -19,8 +19,11 @@
   </div>
 </template>
 <script setup>
-import { ref } from "vue";
-import SvgIcon from "../ui/SvgIcon.vue";
+import { ref, defineComponent } from "vue";
+
+defineComponent({
+  name: "QuestionBar",
+});
 
 /* -------------------------------------------------------------------------- */
 // emit

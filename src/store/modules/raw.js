@@ -1,4 +1,4 @@
-import { Tree } from "@/utils/tree";
+import { Tree } from "@/utils/tree/tree";
 import { getGraphData } from "@/api/graph";
 import { getNodeId } from "@/api/filter";
 import { getNextStep } from "@/api/question";

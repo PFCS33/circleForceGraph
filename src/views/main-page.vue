@@ -19,10 +19,14 @@
   </div>
 </template>
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, defineComponent } from "vue";
 import { useStore } from "vuex";
-import CircleGraph from "@/components/circle-graph/CircleGraph.vue";
-import FilterPanel from "@/components/filter-panel/FilterPanel.vue";
+import CircleGraph from "@/components/graph/circle-graph.vue";
+import FilterPanel from "@/components/filter/filter-panel.vue";
+
+defineComponent({
+  name: "MainPage",
+});
 
 const store = useStore();
 // control timing of creating force graph component

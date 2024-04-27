@@ -1,4 +1,4 @@
-import { baseUrl, fetchData } from "@/utils/serve";
+import { baseUrl, fetchData } from "@/utils/common/serve";
 
 export const getGraphData = () => {
   return fetchData({

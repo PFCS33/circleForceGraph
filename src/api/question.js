@@ -1,4 +1,4 @@
-import { baseUrl, postData } from "@/utils/serve";
+import { baseUrl, postData } from "@/utils/common/serve";
 
 export const getNextStep = (data) => {
   return postData({

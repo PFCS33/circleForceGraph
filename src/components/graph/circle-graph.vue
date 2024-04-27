@@ -105,6 +105,7 @@
 
 <script setup>
 import {
+  defineComponent,
   onMounted,
   ref,
   reactive,
@@ -113,11 +114,14 @@ import {
   nextTick,
   onUnmounted,
 } from "vue";
-import { ForceGraph } from "@/utils/graphGenerator.js";
-import InfoPanel from "@/components/scope-panel/InfoPanel.vue";
-import QuestionBar from "@/components/question-bar/QuestionBar.vue";
+import { ForceGraph } from "@/utils/graph/graphGenerator.js";
+import InfoPanel from "@/components/panel/info-panel.vue";
+import QuestionBar from "@/components/query/question-bar.vue";
 import { useStore } from "vuex";
 
+defineComponent({
+  name: "CircleGraph",
+});
 /* -------------------------------------------------------------------------- */
 // emit event
 /* -------------------------------------------------------------------------- */

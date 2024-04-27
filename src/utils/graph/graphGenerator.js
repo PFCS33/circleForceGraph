@@ -1,5 +1,5 @@
 import vegaEmbed from "vega-embed";
-import EventEmitter from "@/utils/eventEmitter.js";
+import EventEmitter from "@/utils/common/eventEmitter.js";
 /* generate a force svg graph */
 class ForceGraph extends EventEmitter {
   constructor(containerId, nodeData, linkData) {

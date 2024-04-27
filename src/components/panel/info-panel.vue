@@ -78,11 +78,22 @@
 </template>
 
 <script setup>
-import { reactive, computed, watch, ref, onMounted, nextTick } from "vue";
+import {
+  reactive,
+  computed,
+  watch,
+  ref,
+  onMounted,
+  nextTick,
+  defineComponent,
+} from "vue";
 import { getNodeDetail, getVlSpec } from "@/api/panel";
-import SvgIcon from "../ui/SvgIcon.vue";
 import { useStore } from "vuex";
-import { PathGraph } from "@/utils/pathGenerator";
+import { PathGraph } from "@/utils/path/pathGenerator";
+
+defineComponent({
+  name: "InfoPanel",
+});
 
 /* -------------------------------------------------------------------------- */
 // props & emit
@@ -198,7 +209,6 @@ const getDetailInfo = async (id) => {
   try {
     const res = await getNodeDetail(id);
     const data = res.data;
-
     // assign data to local value
     insightData.scope = data.dataScope;
     insightData.type = data.type;
