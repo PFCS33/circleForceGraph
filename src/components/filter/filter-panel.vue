@@ -74,7 +74,7 @@
             <div class="btn-box">
               <SvgIcon
                 iconName="add-outline"
-                @click="addNewNode(insightData)"
+                @click="addNewTopNode(insightData)"
                 class="icon"
               ></SvgIcon>
               <SvgIcon
@@ -148,11 +148,11 @@ const handlePostData = (data) => {
 /* -------------------------------------------------------------------------- */
 const isAddingNode = ref(false);
 const curAddingId = ref(0);
-const addNewNode = (insightData) => {
+const addNewTopNode = (insightData) => {
   isAddingNode.value = true;
   curAddingId.value = insightData["realId"];
   store
-    .dispatch("addNewNode", insightData)
+    .dispatch("addNewTopNode", insightData)
     .then((res) => {
       ElMessage.success(res.message);
     })

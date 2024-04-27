@@ -1,5 +1,6 @@
 import vegaEmbed from "vega-embed";
 import EventEmitter from "@/utils/common/eventEmitter.js";
+import { link } from "d3";
 /* generate a force svg graph */
 class ForceGraph extends EventEmitter {
   constructor(containerId, nodeData, linkData) {
@@ -7,6 +8,8 @@ class ForceGraph extends EventEmitter {
     // viewbox of container svg
     this.containerViewWidth = 1920;
     this.containerViewHeight = 1080;
+    // prepare ref for tooltip
+    this.tooltip = null;
     // create id map for nodes & links data
     this.nodeIdMap = new Map();
     this.linkIdMap = new Map();
@@ -65,6 +68,12 @@ class ForceGraph extends EventEmitter {
       // bg circle
       bgCircleStroke: "#aaa",
       bgCircleWidth: 2.5,
+      // tooltip
+      ttWidth: 200,
+      ttHeight: 100,
+      ttGap: 15,
+      ttFontSize: 20,
+      textGap: 5,
     };
   }
   /* -------------------------------------------------------------------------- */
@@ -81,9 +90,11 @@ class ForceGraph extends EventEmitter {
     // processing ...
     const config = { ...this.defaltForceConfig, ...options };
     // create 3 top elements
-    const bgTopG = svgContainer.append("g").attr("class", "topg-bg");
-    const linkTopG = svgContainer.append("g").attr("class", "topg-link");
-    const nodeTopG = svgContainer.append("g").attr("class", "topg-node");
+    const bgTopG = svgContainer.append("g").attr("class", "topg-bg ");
+    const linkTopG = svgContainer.append("g").attr("class", "topg-link ");
+    const nodeTopG = svgContainer.append("g").attr("class", "topg-node ");
+    // construct tooltip
+    this.createToolTip();
     // create force
     this.simulation = this.createSimulation(tick, config);
     // create drag & zoom
@@ -112,7 +123,7 @@ class ForceGraph extends EventEmitter {
           d.y = centerY + dy * ratio;
         }
       });
-      // apply position to dom
+      // update base-line position
       linkGs
         .selectChildren(".base-line")
         .attr("x1", function () {
@@ -131,11 +142,76 @@ class ForceGraph extends EventEmitter {
           const d = d3.select(this.parentNode).datum();
           return d.target.y;
         });
+      // update angle-line position (redraw d attr of path)
+      linkGs.selectChildren(".angle-line").attr("d", function (d) {
+        let point1 = [];
+        let point2 = [];
+        const relType = d.relType;
+        if (relType === "specialization") {
+          point1 = [d.source.x, d.source.y];
+          point2 = [d.target.x, d.target.y];
+        } else {
+          point1 = [d.target.x, d.target.y];
+          point2 = [d.source.x, d.source.y];
+        }
+        const widthAtStart = 15;
+        const widthAtEnd = 1;
+
+        const angle = Math.atan2(point2[1] - point1[1], point2[0] - point1[0]);
+
+        const p1 = [
+          point1[0] + widthAtStart * Math.sin(angle),
+          point1[1] - widthAtStart * Math.cos(angle),
+        ];
+
+        const p2 = [
+          point1[0] - widthAtStart * Math.sin(angle),
+          point1[1] + widthAtStart * Math.cos(angle),
+        ];
+
+        const p3 = [
+          point2[0] - widthAtEnd * Math.sin(angle),
+          point2[1] + widthAtEnd * Math.cos(angle),
+        ];
+
+        const p4 = [
+          point2[0] + widthAtEnd * Math.sin(angle),
+          point2[1] - widthAtEnd * Math.cos(angle),
+        ];
+
+        return `M${p1} L${p2} L${p3} L${p4} Z`;
+      });
 
       nodeGs.style("transform", (d) => `translate(${d.x}px,${d.y}px)`);
     }
   }
-
+  createToolTip() {
+    const tooltip = this.svgContainer
+      .append("g")
+      .attr("class", "tooltip")
+      .attr("opacity", 0)
+      .style("pointer-events", "none");
+    tooltip
+      .append("rect")
+      .attr("class", "background")
+      .attr("width", this.defaltDomConfig.ttWidth)
+      .attr("height", this.defaltDomConfig.ttHeight)
+      .style("fill", "#fff")
+      .attr("stroke", this.defaltDomConfig.bgCircleStroke)
+      .attr("stroke-width", this.defaltDomConfig.bgCircleWidth);
+    tooltip
+      .append("text")
+      .attr("class", "text")
+      .style("font-size", this.defaltDomConfig.ttFontSize)
+      .style("fill", "#aaa")
+      .style(
+        "transform",
+        `translate(${this.defaltDomConfig.textGap}px, ${
+          this.defaltDomConfig.ttFontSize + this.defaltDomConfig.textGap
+        }px)`
+      );
+    this.tooltip = tooltip;
+  }
   /* create force simulation
    * return simulation */
   createSimulation(
@@ -237,7 +313,8 @@ class ForceGraph extends EventEmitter {
   createZoom(simulation, { scale = [0.3, 8] } = {}) {
     const self = this;
     const svgContainer = this.svgContainer;
-    const topGs = svgContainer.selectChildren("g");
+    let topGs = svgContainer.selectChildren("g");
+
     // zoom function
     const zooming = function (event, d) {
       // get transform
@@ -731,13 +808,54 @@ class ForceGraph extends EventEmitter {
       .join(
         (enter) => {
           const linkGs = enter.append("g");
-          linkGs
-            .append("line")
-            .attr("class", "base-line")
-            .attr("stroke", "#555")
-            .attr("stroke-opacity", 0.6)
-            .attr("stroke-width", 1);
+          // change style according to relType
+          linkGs.each(function (d) {
+            const relType = d.relType;
+            const linkG = d3.select(this);
+            switch (relType) {
+              case "specialization":
+              case "generalization":
+                // append path for drawing angle in tick function directly
+                linkG
+                  .append("path")
+                  .attr("class", "angle-line")
+                  .attr("fill", "#ddd");
+                break;
+              case "sameLevel":
+                linkG
+                  .append("line")
+                  .attr("class", "base-line")
+                  .attr("stroke", "#aaa")
+                  .attr("stroke-opacity", 0.6)
+                  .attr("stroke-width", 3);
+                break;
+              default:
+                linkG
+                  .append("line")
+                  .attr("class", "base-line")
+                  .attr("stroke", "#aaa")
+                  .attr("stroke-opacity", 0.6)
+                  .attr("stroke-width", 3)
+                  .style("stroke-dasharray", "10 5");
+            }
+          });
 
+          linkGs
+            .on("mouseover", (e, d) => {
+              this.tooltip.selectChild(".text").text(d.relationship);
+              this.tooltip.attr("display", null);
+              this.fadeInTransition(this.tooltip);
+            })
+            .on("mousemove", (e, d) => {
+              const [x, y] = d3.pointer(e);
+              this.tooltip
+                .selectChildren("*")
+                .attr("x", x + this.defaltDomConfig.ttGap)
+                .attr("y", y + this.defaltDomConfig.ttGap);
+            })
+            .on("mouseout", () => {
+              this.fadeOutTransition(this.tooltip, "hide");
+            });
           // add animation
           this.fadeInTransition(linkGs);
         },

@@ -60,6 +60,7 @@ export default {
           .then((res) => {
             const data = res.data;
             const newNodeInfo = data.nodes;
+            // add tree nodes in tree structure
             context.dispatch("addTreeNode", {
               parent: payload.id,
               children: newNodeInfo,
@@ -77,7 +78,7 @@ export default {
       });
     },
     // add new node from filter panel
-    addNewNode(context, payload) {
+    addNewTopNode(context, payload) {
       return new Promise((resolve, reject) => {
         getNodeId()
           .then((res) => {
@@ -147,6 +148,8 @@ export default {
           // refer to visual id
           id: d.id,
           realId: d["realId"],
+          relType: d.relType || "specialization",
+          relationship: d.relationship || "This is relationship",
           question: payload.question,
         }))
       );
@@ -170,6 +173,7 @@ export default {
       const tree = context.getters["treeData"];
       const layerInfo = tree.getDescendantList();
       const links = tree.getLinkList();
+      // process nodes
       // get map for new node info
       const newNodeMap = new Map();
       paylaod.forEach((node) => {
