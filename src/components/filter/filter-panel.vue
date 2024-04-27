@@ -63,7 +63,7 @@
               </div>
               <div class="score-box">
                 <span class="title">Score</span>
-                <span class="value">{{ insightData.score }}</span>
+                <span class="value">{{ insightData.score.toFixed(5) }}</span>
               </div>
             </div>
             <div
