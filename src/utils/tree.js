@@ -25,7 +25,7 @@ class Tree {
   constructor() {
     this.root = new TreeNode({
       id: 0,
-      real_id: 0,
+      realId: -1,
       layer: 0,
     });
     // record id-value mapping
@@ -139,6 +139,7 @@ class Tree {
         const question = curNode.value.question;
         res.push({
           id: curNode.value.id,
+          realId: curNode.value.realId,
           question: question ? question : null,
         });
         curNode = curNode.parent;

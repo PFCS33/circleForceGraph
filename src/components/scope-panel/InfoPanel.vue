@@ -135,7 +135,7 @@ watch(curTab, (newVal, oldVal) => {
       case "history":
         if (!hasHisLoad) {
           nextTick(() => {
-            initVlSpec(questionPath.value.map((d) => d["real_id"]));
+            initVlSpec(questionPath.value.map((d) => d["realId"]));
           });
         } else {
           nextTick(() => {
@@ -158,13 +158,17 @@ let hasHisLoad = false;
 // get vl-spec from backend server, and merge data to form path graph
 const initVlSpec = (ids) => {
   isHisLoading.value = true;
+  // delete start node, for（real_id）===-1, which do not need vegalite
+  ids.pop();
   getVlSpec(ids)
     .then((res) => {
       const vlSpec = res.data.vlList;
+      // add a empty vegaSpec for start node
+      vlSpec.push("");
       pathGraph.value = new PathGraph(
         svgContainerId,
         // add vega-lite attr in question path
-        questionPath.value.map((d, idx) => ({ ...d, "vega-lite": vlSpec[idx] }))
+        questionPath.value.map((d, idx) => ({ ...d, vegaLite: vlSpec[idx] }))
       );
       // add event listener
       pathGraph.value.on("node-hover", handleHover);

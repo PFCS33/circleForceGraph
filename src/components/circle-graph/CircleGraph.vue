@@ -13,7 +13,7 @@
         class="panel"
         v-if="showPanel"
         v-show="!hasHide"
-        :realId="panelNode['real_id']"
+        :realId="panelNode['realId']"
         :id="panelNode.id"
         @hide="hidePanel"
       ></InfoPanel>
@@ -27,7 +27,7 @@
         @close="
           setQuestionEmitNode({
             id: questionNode.id,
-            real_id: questionNode['real_id'],
+            realId: questionNode['realId'],
             element: null,
           })
         "
@@ -281,12 +281,12 @@ const closeShowPanel = () => {
 const showQsBar = ref(false);
 const questionEmitNode = reactive({
   id: -1,
-  real_id: -1,
+  realId: -1,
   element: null,
 });
 const questionNode = reactive({
   id: -1,
-  real_id: -1,
+  realId: -1,
   element: null,
 });
 watch(questionEmitNode, (newVal) => {
@@ -350,8 +350,8 @@ const handleQuery = (paylaod) => {
   });
   store // call post func in vuex
     .dispatch("postQuestion", {
-      id: questionNode["real_id"],
-      content: paylaod.content,
+      id: questionNode["realId"],
+      content: paylaod.content || "",
     })
     .then((res) => {
       ElMessage.success(res.message);
@@ -388,13 +388,13 @@ const toggleQuerySpCSS = (element, hasQuery) => {
 // node that child component emits
 const focusEmitNode = reactive({
   id: -1,
-  real_id: -1,
+  realId: -1,
   element: null,
 });
 // 'real' focus node
 const panelNode = reactive({
   id: -1,
-  real_id: -1,
+  realId: -1,
   element: null,
 });
 // watch to set css of new & old node
@@ -411,7 +411,7 @@ watch(focusEmitNode, (newVal) => {
       myTool.reactiveAssign(
         {
           id: -1,
-          real_id: -1,
+          realId: -1,
           element: null,
         },
         panelNode
@@ -431,7 +431,7 @@ watch(focusEmitNode, (newVal) => {
       // set panel node
       myTool.reactiveAssign(newVal, panelNode);
       // call dispatch func to change store's focus id
-      store.dispatch("focus/changeRealId", newVal["real_id"]);
+      store.dispatch("focus/changeRealId", newVal["realId"]);
       // switch panel status
       toggleShowPanel();
     }

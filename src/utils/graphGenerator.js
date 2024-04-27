@@ -458,13 +458,13 @@ class ForceGraph extends EventEmitter {
               // emit node click event
               self.emit("node-click", {
                 id: data.id,
-                real_id: data["real_id"],
+                realId: data["realId"],
                 element: topG.selectChild(".vl-container"),
               });
               // emit question click event
               self.emit("question-click", {
                 id: data.id,
-                real_id: data["real_id"],
+                realId: data["realId"],
                 element: topG,
               });
               // change data
@@ -581,12 +581,12 @@ class ForceGraph extends EventEmitter {
               const data = topG.datum();
               self.emit("node-click", {
                 id: data.id,
-                real_id: data["real_id"],
+                realId: data["realId"],
                 element: topG.selectChild(".vl-container"),
               });
               self.emit("question-click", {
                 id: data.id,
-                real_id: data["real_id"],
+                realId: data["realId"],
                 element: topG,
               });
             });
@@ -622,13 +622,13 @@ class ForceGraph extends EventEmitter {
               // emit empty node, clear focus status
               self.emit("node-click", {
                 id: data.id,
-                real_id: data["real_id"],
+                realId: data["realId"],
                 element: null,
               });
               // emit empty node, clear question status
               self.emit("question-click", {
                 id: data.id,
-                real_id: data["real_id"],
+                realId: data["realId"],
                 element: null,
               });
               // reset fixed status of node, if it was fixed
@@ -673,7 +673,7 @@ class ForceGraph extends EventEmitter {
               // emit question click event
               self.emit("question-click", {
                 id: data.id,
-                real_id: data["real_id"],
+                realId: data["realId"],
                 element: topG,
               });
             });
@@ -783,7 +783,7 @@ class ForceGraph extends EventEmitter {
     const data = topG.datum();
     data.vlConfig = configData;
     // create new vega-lite svg
-    const vlSpec = JSON.parse(data["vega-lite"]);
+    const vlSpec = JSON.parse(data["vegaLite"]);
     // add options
     vlSpec["width"] = vlWidth;
     vlSpec["height"] = vlHeight;

@@ -10,7 +10,7 @@ const drawVl = (
   { width = "container", height = "container", background = "transparent" } = {}
 ) => {
   // get vl spec, and add config
-  let vlSpec = JSON.parse(data["vega-lite"]);
+  let vlSpec = JSON.parse(data["vegaLite"]);
   vlSpec.width = width;
   vlSpec.height = height;
   vlSpec.background = background;

@@ -50,6 +50,7 @@ class PathGraph extends EventEmitter {
   }
 
   createGraph() {
+    console.log(this.pathList);
     const svgContainer = this.setSvgContainer(this.containerId);
     this.svgContainer = svgContainer;
     // append the top g node first
@@ -217,10 +218,10 @@ class PathGraph extends EventEmitter {
             .filter((d) => d !== num - 1)
             .append("g")
             .attr("class", "vl-container");
-
           vlGs.each(function (d) {
             const data = pathList[d];
             const nodeG = d3.select(this);
+
             drawVl(nodeG, data, {
               width: graphConfig.vlSize + 50,
               height: graphConfig.vlSize + 50,

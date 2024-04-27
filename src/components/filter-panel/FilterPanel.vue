@@ -39,7 +39,7 @@
       <div class="insight-list-border" v-show="!isLoadingPost">
         <div
           class="wrapper"
-          :key="insightData['real_id']"
+          :key="insightData['realId']"
           v-for="insightData in currentPageData"
         >
           <transition name="slide">
@@ -51,9 +51,9 @@
           <div
             :class="[
               'insight-border',
-              { isSelected: curRealId === insightData['real_id'] },
+              { isSelected: curRealId === insightData['realId'] },
             ]"
-            v-loading="isAddingNode && curAddingId === insightData['real_id']"
+            v-loading="isAddingNode && curAddingId === insightData['realId']"
             element-loading-text="Adding Node..."
           >
             <div class="text-container">
@@ -68,7 +68,7 @@
             </div>
             <div
               class="vl-container"
-              :id="insightData['real_id']"
+              :id="insightData['realId']"
               ref="vlContainers"
             ></div>
             <div class="btn-box">
@@ -148,7 +148,7 @@ const isAddingNode = ref(false);
 const curAddingId = ref(0);
 const addNewNode = (insightData) => {
   isAddingNode.value = true;
-  curAddingId.value = insightData["real_id"];
+  curAddingId.value = insightData["realId"];
   store
     .dispatch("addNewNode", insightData)
     .then((res) => {
@@ -200,8 +200,7 @@ watch(currentPageData, (newVal, oldVal) => {
     vlContainers.value.forEach((containerRef, index) => {
       // attention: attribute is String type
       const realId = +containerRef.getAttribute("id");
-      const data = newVal.find((item) => item["real_id"] === realId);
-      // console.log(data);
+      const data = newVal.find((item) => item["realId"] === realId);
       drawVl(d3.select(containerRef), data);
     });
   });

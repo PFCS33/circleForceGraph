@@ -32,7 +32,6 @@ const isLoading = ref(true);
 /* -------------------------------------------------------------------------- */
 const curRealId = ref(-1);
 const changeFocusNode = (realId) => {
-  // console.log(realId);
   curRealId.value = realId;
 };
 // starter

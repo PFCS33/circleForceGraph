@@ -120,12 +120,13 @@ export default {
       const tree = new Tree();
       context.commit("setTreeData", tree);
       // add node into tree
-      const newNodeInfo = payload.node;
+      const newNodeInfo = payload.nodes;
       context.dispatch("addTreeNode", {
         parent: 0,
         children: newNodeInfo,
         question: null,
       });
+
       // update graph data
       context.dispatch("updateGraphDataByTree", newNodeInfo);
     },
@@ -145,7 +146,7 @@ export default {
         payload.children.map((d) => ({
           // refer to visual id
           id: d.id,
-          real_id: d["real_id"],
+          realId: d["realId"],
           question: payload.question,
         }))
       );
