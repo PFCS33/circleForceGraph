@@ -59,7 +59,7 @@
             <div class="item-box">
               <div class="label item">Score</div>
               <div class="value item score">
-                {{ insightData.score.toFixed(5) }}
+                {{ insightData.score ? insightData.score.toFixed(5) : "" }}
               </div>
             </div>
             <div class="item-box desc">

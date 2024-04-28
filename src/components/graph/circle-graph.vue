@@ -354,7 +354,8 @@ const handleQuery = (paylaod) => {
   });
   store // call post func in vuex
     .dispatch("postQuestion", {
-      id: questionNode["realId"],
+      id: questionNode.id,
+      realId: questionNode["realId"],
       content: paylaod.content || "",
     })
     .then((res) => {

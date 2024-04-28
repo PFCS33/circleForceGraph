@@ -63,7 +63,9 @@
               </div>
               <div class="score-box">
                 <span class="title">Score</span>
-                <span class="value">{{ insightData.score.toFixed(5) }}</span>
+                <span class="value">{{
+                  insightData.score ? insightData.score.toFixed(5) : ""
+                }}</span>
               </div>
             </div>
             <div
@@ -105,6 +107,7 @@ import { ref, reactive, computed, watch, nextTick, defineComponent } from "vue";
 import { useStore } from "vuex";
 import { getInsights } from "@/api/filter";
 import { drawVl } from "@/utils/vega_lite/vlDrawer.js";
+import { vega } from "vega-embed";
 
 defineComponent({
   name: "FilterPanel",
@@ -151,8 +154,14 @@ const curAddingId = ref(0);
 const addNewTopNode = (insightData) => {
   isAddingNode.value = true;
   curAddingId.value = insightData["realId"];
+  const newData = {
+    realId: insightData.realId,
+    type: insightData.type,
+    category: insightData.category,
+    vegaLite: insightData.vegaLite,
+  };
   store
-    .dispatch("addNewTopNode", insightData)
+    .dispatch("addNewTopNode", newData)
     .then((res) => {
       ElMessage.success(res.message);
     })

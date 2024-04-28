@@ -142,11 +142,14 @@ class ForceGraph extends EventEmitter {
           const d = d3.select(this.parentNode).datum();
           return d.target.y;
         });
+
       // update angle-line position (redraw d attr of path)
-      linkGs.selectChildren(".angle-line").attr("d", function (d) {
+      linkGs.selectChildren(".angle-line").attr("d", function () {
+        const d = d3.select(this.parentNode).datum();
         let point1 = [];
         let point2 = [];
         const relType = d.relType;
+
         if (relType === "specialization") {
           point1 = [d.source.x, d.source.y];
           point2 = [d.target.x, d.target.y];

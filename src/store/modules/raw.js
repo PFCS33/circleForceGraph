@@ -56,25 +56,30 @@ export default {
     // post question ,and then add nodes in tree & update graph
     postQuestion(context, payload) {
       return new Promise((resolve, reject) => {
-        getNextStep(payload)
-          .then((res) => {
-            const data = res.data;
-            const newNodeInfo = data.nodes;
-            // add tree nodes in tree structure
-            context.dispatch("addTreeNode", {
-              parent: payload.id,
-              children: newNodeInfo,
-              question: payload.content,
-            });
-            // update graph data
-            context.dispatch("updateGraphDataByTree", newNodeInfo);
-            resolve({
-              message: "Query complete.",
-            });
-          })
-          .catch((error) => {
-            reject(error);
+        getNextStep({
+          id: payload.realId,
+          content: payload.content,
+        }).then((res) => {
+          const data = res.data;
+          const newNodeInfo = data.nodes;
+
+          // add tree nodes in tree structure
+          context.dispatch("addTreeNode", {
+            parent: payload.id,
+            children: newNodeInfo,
+            question: payload.content,
           });
+
+          // update graphdata
+          context.dispatch("updateGraphDataByTree", newNodeInfo);
+
+          resolve({
+            message: "Query complete.",
+          });
+        });
+        // .catch((error) => {
+        //   reject(error);
+        // });
       });
     },
     // add new node from filter panel
@@ -188,6 +193,7 @@ export default {
           return { ...item };
         }
       });
+
       // set graph data
       context.commit("setGraphData", {
         node: newNodes,
