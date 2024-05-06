@@ -69,7 +69,7 @@ onMounted(() => {
     @include flex-box(column);
     justify-content: center;
     padding-left: 1rem;
-    // background-color: $primary-color;
+    background-color: $background-color-light;
     .brand {
       font-size: 2rem;
       font-weight: bold;

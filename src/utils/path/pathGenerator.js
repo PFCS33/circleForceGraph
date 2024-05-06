@@ -174,7 +174,7 @@ class PathGraph extends EventEmitter {
           // vega-lite graph
           const nodeGs = topGs.append("g").attr("class", "node-container");
           // add cursor event handler
-          topGs
+          nodeGs
             .filter((d) => d !== num - 1)
             .style("cursor", "pointer")
             .on("mouseenter", function (_event, idx) {

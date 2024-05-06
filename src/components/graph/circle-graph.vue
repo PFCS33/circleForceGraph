@@ -18,6 +18,11 @@
         @hide="hidePanel"
       ></InfoPanel>
     </transition>
+    <transition name="drop">
+      <div v-if="displayAddPrompt" class="add-prompt">
+        <p>Choose a parent node.</p>
+      </div>
+    </transition>
     <transition name="pop">
       <QuestionBar
         class="qsbar"
@@ -125,7 +130,7 @@ defineComponent({
 /* -------------------------------------------------------------------------- */
 // emit event
 /* -------------------------------------------------------------------------- */
-// const emit = defineEmits(["changeFocusNode"]);
+
 /* -------------------------------------------------------------------------- */
 // get graphData from vuex
 /* -------------------------------------------------------------------------- */
@@ -144,6 +149,7 @@ watch(graphData, (newVal, oldVal) => {
       forceGraph.on("node-click", setFocusEmitNode);
       forceGraph.on("question-click", setQuestionEmitNode);
       forceGraph.on("node-delete", deleteNode);
+      forceGraph.on("add-node-click", addNode);
       forceGraph.createForceGraph();
     } else {
       // TODO update graph data
@@ -451,12 +457,39 @@ const setFocusEmitNode = (data) => {
   myTool.reactiveAssign(data, focusEmitNode);
 };
 /* -------------------------------------------------------------------------- */
+// node-adder related
+/* -------------------------------------------------------------------------- */
+const addedId = computed(() => {
+  return store.getters["nodeAdder/realId"];
+});
+const displayAddPrompt = computed(() => {
+  return store.getters["nodeAdder/realId"] === -1 ? false : true;
+});
+watch(addedId, (newVal) => {
+  // every time a new added node was set
+  if (newVal !== -1) {
+    // hide panel and qs bar
+    closeQsBar();
+    if (showPanel.value) {
+      hidePanel();
+    }
+    // set graph to freeze
+    forceGraph.setFreezeMode();
+  } else {
+    forceGraph.resetFreezeMode();
+  }
+});
+const addNode = (payload) => {
+  const parentId = payload.id;
+  store.dispatch("nodeAdder/startAddNode", parentId);
+};
+/* -------------------------------------------------------------------------- */
 // life cycle hooks
 /* -------------------------------------------------------------------------- */
 
 onUnmounted(() => {
-  forceGraph.off("node-click", setFocusEmitNode);
-  forceGraph.off("question-click", showQuestionBar);
+  // forceGraph.off("node-click", setFocusEmitNode);
+  // forceGraph.off("question-click", showQuestionBar);
 });
 </script>
 
@@ -470,6 +503,25 @@ onUnmounted(() => {
   .qsbar {
     position: fixed;
     bottom: 0;
+  }
+
+  .add-prompt {
+    position: absolute;
+    top: 0;
+    width: 200px;
+    height: 50px;
+    left: calc(50% - 100px);
+    // border: $border;
+    // background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: $border-radius;
+    font-size: 16px;
+    font-weight: $font-weight-bold;
+    color: $secondary-color;
+    background-color: $primary-color;
+    box-shadow: $border-shadow;
   }
 
   .panel-show-icon {
@@ -491,6 +543,9 @@ onUnmounted(() => {
     height: 100%;
     // cancle the bottom blank in inline style
     display: block;
+    &.shadowed {
+      background-color: rgba($primary-color-light, 0.16);
+    }
   }
 }
 </style>
@@ -499,6 +554,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 @include slide-animation();
 @include pop-animation();
+@include drop-animation();
 </style>
 
 <style lang="scss">

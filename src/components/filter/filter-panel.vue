@@ -76,11 +76,14 @@
             <div class="btn-box">
               <SvgIcon
                 iconName="add-outline"
-                @click="addNewTopNode(insightData)"
-                class="icon"
+                @click="handleNodeAdd(insightData)"
+                :class="[
+                  'icon',
+                  { chosen: insightData.realId === curAddingId },
+                ]"
               ></SvgIcon>
               <SvgIcon
-                :class="['icon', { 'has-desc': insightData.isDescVisible }]"
+                :class="['icon', { chosen: insightData.isDescVisible }]"
                 iconName="more"
                 @click="toggleShowDesc($event, insightData)"
               ></SvgIcon>
@@ -149,29 +152,26 @@ const handlePostData = (data) => {
 /* -------------------------------------------------------------------------- */
 // tree manipulation
 /* -------------------------------------------------------------------------- */
-const isAddingNode = ref(false);
-const curAddingId = ref(0);
-const addNewTopNode = (insightData) => {
-  isAddingNode.value = true;
-  curAddingId.value = insightData["realId"];
-  const newData = {
+// const isAddingNode = ref(false);
+// const curAddingId = ref(0);
+const isAddingNode = computed(() => {
+  return store.getters["nodeAdder/isAdding"];
+});
+const curAddingId = computed(() => {
+  return store.getters["nodeAdder/realId"];
+});
+const handleNodeAdd = (insightData) => {
+  // addNewNode(0, insightData);
+  // set added node real id
+  store.commit("nodeAdder/setRealId", insightData["realId"]);
+  const newNode = {
     realId: insightData.realId,
     type: insightData.type,
     category: insightData.category,
     vegaLite: insightData.vegaLite,
   };
-  store
-    .dispatch("addNewTopNode", newData)
-    .then((res) => {
-      ElMessage.success(res.message);
-    })
-    .catch((e) => {
-      ElMessage.error(`Add Node Error: ${e.message}`);
-    })
-    .finally(() => {
-      isAddingNode.value = false;
-      curAddingId.value = 0;
-    });
+  // set added node data
+  store.commit("nodeAdder/setNodeData", newNode);
 };
 
 /* -------------------------------------------------------------------------- */
@@ -404,7 +404,7 @@ watch(curValues, (newVal) => {
               @include icon-style($icon-size-small);
               border-radius: $border-radius;
 
-              &.has-desc {
+              &.chosen {
                 background-color: $primary-color;
                 fill: #fff;
               }

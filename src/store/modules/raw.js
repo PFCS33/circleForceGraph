@@ -59,43 +59,47 @@ export default {
         getNextStep({
           id: payload.realId,
           content: payload.content,
-        }).then((res) => {
-          const data = res.data;
-          const newNodeInfo = data.nodes;
+        })
+          .then((res) => {
+            console.log("res.data", res.data);
+            const data = res.data;
+            const newNodeInfo = data.nodes;
 
-          // add tree nodes in tree structure
-          context.dispatch("addTreeNode", {
-            parent: payload.id,
-            children: newNodeInfo,
-            question: payload.content,
+            // add tree nodes in tree structure
+            context.dispatch("addTreeNode", {
+              parent: payload.id,
+              children: newNodeInfo,
+              question: payload.content,
+            });
+
+            // update graphdata
+            context.dispatch("updateGraphDataByTree", newNodeInfo);
+
+            resolve({
+              message: "Query complete.",
+            });
+          })
+          .catch((error) => {
+            reject(error);
           });
-
-          // update graphdata
-          context.dispatch("updateGraphDataByTree", newNodeInfo);
-
-          resolve({
-            message: "Query complete.",
-          });
-        });
-        // .catch((error) => {
-        //   reject(error);
-        // });
       });
     },
     // add new node from filter panel
-    addNewTopNode(context, payload) {
+    addNewNode(context, payload) {
       return new Promise((resolve, reject) => {
+        const nodeData = payload.nodeData;
+        const parentId = payload.parentId;
         getNodeId()
           .then((res) => {
             const id = res.data.id;
             const newNodeInfo = [
               {
-                ...payload,
+                ...nodeData,
                 id: id,
               },
             ];
             context.dispatch("addTreeNode", {
-              parent: 0,
+              parent: parentId,
               children: newNodeInfo,
               question: null,
             });
@@ -153,7 +157,7 @@ export default {
           // refer to visual id
           id: d.id,
           realId: d["realId"],
-          relType: d.relType || "specialization",
+          relType: d.relType || "",
           relationship: d.relationship || "This is relationship",
           question: payload.question,
         }))

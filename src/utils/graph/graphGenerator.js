@@ -1,6 +1,6 @@
 import vegaEmbed from "vega-embed";
 import EventEmitter from "@/utils/common/eventEmitter.js";
-import { link } from "d3";
+
 /* generate a force svg graph */
 class ForceGraph extends EventEmitter {
   constructor(containerId, nodeData, linkData) {
@@ -8,6 +8,8 @@ class ForceGraph extends EventEmitter {
     // viewbox of container svg
     this.containerViewWidth = 1920;
     this.containerViewHeight = 1080;
+    // set freeze mode of whole graph
+    this.hasFreeze = false;
     // prepare ref for tooltip
     this.tooltip = null;
     // create id map for nodes & links data
@@ -334,7 +336,7 @@ class ForceGraph extends EventEmitter {
     const self = this;
     // drag function
     const dragstarted = function (event) {
-      if (!event.active) {
+      if (!event.active && !self.hasFreeze) {
         simulation
           .alphaTarget(
             +self.defaltForceConfig.alphaTarget + 0.5 > 1
@@ -353,7 +355,7 @@ class ForceGraph extends EventEmitter {
       event.subject.fy = event.y;
     };
     const dragended = function (event) {
-      if (!event.active) {
+      if (!event.active && !self.hasFreeze) {
         simulation.alphaTarget(self.defaltForceConfig.alphaTarget);
       }
 
@@ -534,7 +536,13 @@ class ForceGraph extends EventEmitter {
               const topG = d3.select(this.parentNode);
               const circleContainer = d3.select(this);
               const data = topG.datum();
-
+              // if freeze mode, just emit event and return
+              if (self.hasFreeze) {
+                self.emit("add-node-click", {
+                  id: data.id,
+                });
+                return;
+              }
               // emit node click event
               self.emit("node-click", {
                 id: data.id,
@@ -547,9 +555,9 @@ class ForceGraph extends EventEmitter {
                 realId: data["realId"],
                 element: topG,
               });
+              // switch display btw circle and vega-lite
               // change data
               data.showVL = true;
-              // switch display btw circle and vega-lite
               self.fadeOutTransition(circleContainer, "hide");
               // reset attr of vl-container, prepare for animation
               const vlContainer = topG.selectChild(".vl-container");
@@ -568,7 +576,7 @@ class ForceGraph extends EventEmitter {
                   data.vlConfig.border.width,
                   data.vlConfig.border.height
                 );
-                self.refreshSimulation();
+                self.refreshSimNodes();
               }
             })
             .on("mouseover", function () {
@@ -620,6 +628,10 @@ class ForceGraph extends EventEmitter {
             })
 
             .on("dblclick", function () {
+              // if it is freeze mode, just reutrn
+              if (self.hasFreeze) {
+                return;
+              }
               const data = d3.select(this.parentNode).datum();
               const vlContainer = d3.select(this);
 
@@ -659,6 +671,14 @@ class ForceGraph extends EventEmitter {
               // emit node click event
               const topG = d3.select(this.parentNode.parentNode);
               const data = topG.datum();
+              // if freeze mode, just emit event and return
+              if (self.hasFreeze) {
+                self.emit("add-node-click", {
+                  id: data.id,
+                });
+                return;
+              }
+
               self.emit("node-click", {
                 id: data.id,
                 realId: data["realId"],
@@ -697,6 +717,10 @@ class ForceGraph extends EventEmitter {
             .attr("height", vlIconSize)
             .style("transform", `translate(${-vlIconSize - vlIconGap}px, ${0})`)
             .on("click", function () {
+              // if freeze mode, just  return
+              if (self.hasFreeze) {
+                return;
+              }
               const topG = d3.select(this.parentNode.parentNode.parentNode);
               const data = topG.datum();
               // emit empty node, clear focus status
@@ -718,7 +742,7 @@ class ForceGraph extends EventEmitter {
               }
               // change status data about vl-graph, then refandresh simulation parameters
               data.showVL = false;
-              self.refreshSimulation();
+              self.refreshSimNodes();
               // add animation of vl graph
               const circleContainer = topG.selectChild(".circle-container");
               const vlConfig = data.vlConfig;
@@ -748,6 +772,10 @@ class ForceGraph extends EventEmitter {
               `translate(${-(vlIconSize + vlIconGap) * 2}px, ${0})`
             )
             .on("click", function () {
+              // if freeze mode, just  return
+              if (self.hasFreeze) {
+                return;
+              }
               const topG = d3.select(this.parentNode.parentNode.parentNode);
               const data = topG.datum();
               // emit question click event
@@ -770,6 +798,10 @@ class ForceGraph extends EventEmitter {
               `translate(${-(vlIconSize + vlIconGap) * 3}px, ${0})`
             )
             .on("click", function () {
+              // if freeze mode, just  return
+              if (self.hasFreeze) {
+                return;
+              }
               const vlContainer = d3.select(this.parentNode.parentNode);
               const data = d3
                 .select(this.parentNode.parentNode.parentNode)
@@ -785,6 +817,10 @@ class ForceGraph extends EventEmitter {
             .attr("width", vlIconSize)
             .attr("height", vlIconSize)
             .on("click", function (e, d) {
+              // if freeze mode, just  return
+              if (self.hasFreeze) {
+                return;
+              }
               self.emit("node-delete", d.id);
             });
           // .style("transform", `translate(${-vlIconSize - vlIconGap}px, ${0})`)
@@ -968,7 +1004,7 @@ class ForceGraph extends EventEmitter {
 
       // add animation
       this.vlInTransition(vlContainer, borderWidth, borderHeight);
-      this.refreshSimulation();
+      this.refreshSimNodes();
     });
   }
   // belows are small utils functions
@@ -1002,7 +1038,7 @@ class ForceGraph extends EventEmitter {
     }
   }
   // refresh force parameter
-  refreshSimulation() {
+  refreshSimNodes() {
     this.simulation.nodes(this.nodeData);
     this.simulation.alpha(0.8).restart();
   }
@@ -1070,6 +1106,22 @@ class ForceGraph extends EventEmitter {
           d3.select(this).attr("display", "none");
         }
       });
+  }
+
+  // 'freeze' the graph
+  setFreezeMode() {
+    this.hasFreeze = true;
+    // change style of svg
+    this.svgContainer.classed("shadowed", true);
+    // stop the simulation
+    this.simulation.stop();
+  }
+
+  // 'unfreeze' the graph
+  resetFreezeMode() {
+    this.hasFreeze = false;
+    // change style of svg
+    this.svgContainer.classed("shadowed", false);
   }
 }
 

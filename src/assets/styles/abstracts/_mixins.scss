@@ -152,3 +152,24 @@
     visibility: visible;
   }
 }
+@mixin drop-animation() {
+  .drop-enter-active {
+    transition: all 100ms ease-out;
+  }
+
+  .drop-leave-active {
+    transition: all 100ms ease-in;
+  }
+
+  .drop-enter-from,
+  .drop-leave-to {
+    transform: translateY(-20rem);
+    visibility: hidden;
+  }
+
+  .drop-enter-to,
+  .drop-leave-from {
+    transform: translateY(0);
+    visibility: visible;
+  }
+}
