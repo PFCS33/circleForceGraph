@@ -68,6 +68,12 @@
             </div>
           </div>
         </div>
+        <div class="oprt-border border">
+          <h2 class="title">Operations</h2>
+          <div class="content">
+            <button>move</button>
+          </div>
+        </div>
       </div>
       <div class="history-page" v-else-if="curTab === 'history'">
         <!-- <div v-for="node in questionPath" :key="node.id">

@@ -580,8 +580,8 @@ class ForceGraph extends EventEmitter {
               }
             })
             .on("mouseover", function () {
-              // add hover class, prepare for adding fancier css
               const circleContainer = d3.select(this);
+              // add hover class, prepare for adding fancier css
               circleContainer.classed("has-hover", true);
             })
             .on("mouseout", function () {
@@ -689,6 +689,14 @@ class ForceGraph extends EventEmitter {
                 realId: data["realId"],
                 element: topG,
               });
+            })
+            .on("mouseover", function () {
+              const vlBody = d3.select(this);
+              vlBody.classed("has-hover", true);
+            })
+            .on("mouseout", function () {
+              const vlBody = d3.select(this);
+              vlBody.classed("has-hover", false);
             });
           // rect as border
           const borders = vlBody
@@ -857,13 +865,13 @@ class ForceGraph extends EventEmitter {
                 // append path for drawing angle in tick function directly
                 linkG
                   .append("path")
-                  .attr("class", "angle-line")
+                  .attr("class", "line angle-line")
                   .attr("fill", "#ddd");
                 break;
               case "sameLevel":
                 linkG
                   .append("line")
-                  .attr("class", "base-line")
+                  .attr("class", "line base-line")
                   .attr("stroke", "#aaa")
                   .attr("stroke-opacity", 0.6)
                   .attr("stroke-width", 3);
@@ -871,7 +879,7 @@ class ForceGraph extends EventEmitter {
               default:
                 linkG
                   .append("line")
-                  .attr("class", "base-line")
+                  .attr("class", "line base-line")
                   .attr("stroke", "#aaa")
                   .attr("stroke-opacity", 0.6)
                   .attr("stroke-width", 3)
@@ -1113,6 +1121,7 @@ class ForceGraph extends EventEmitter {
     this.hasFreeze = true;
     // change style of svg
     this.svgContainer.classed("shadowed", true);
+
     // stop the simulation
     this.simulation.stop();
   }
@@ -1122,6 +1131,7 @@ class ForceGraph extends EventEmitter {
     this.hasFreeze = false;
     // change style of svg
     this.svgContainer.classed("shadowed", false);
+    this.simulation.restart();
   }
 }
 

@@ -20,7 +20,9 @@
     </transition>
     <transition name="drop">
       <div v-if="displayAddPrompt" class="add-prompt">
-        <p>Choose a parent node.</p>
+        <div class="text">ADD MODE</div>
+
+        <SvgIcon class="icon" iconName="close" @click="cancleAddNode"></SvgIcon>
       </div>
     </transition>
     <transition name="pop">
@@ -299,6 +301,13 @@ const questionNode = reactive({
   realId: -1,
   element: null,
 });
+const clearCurQuestionNode = () => {
+  if (questionNode.element) {
+    questionEmitNode.id = questionNode.id;
+    questionEmitNode.realId = questionNode.realId;
+    questionEmitNode.element = null;
+  }
+};
 watch(questionEmitNode, (newVal) => {
   if (!newVal.element) {
     if (newVal.id === questionNode.id) {
@@ -408,6 +417,14 @@ const panelNode = reactive({
   realId: -1,
   element: null,
 });
+// reset the panel node to null, to close the side panel
+const clearCurPanelNode = () => {
+  if (panelNode.element) {
+    focusEmitNode.id = panelNode.id;
+    focusEmitNode.realId = panelNode.realId;
+    focusEmitNode.element = null;
+  }
+};
 // watch to set css of new & old node
 watch(focusEmitNode, (newVal) => {
   // first, check whether empty node was emitted
@@ -468,17 +485,18 @@ const displayAddPrompt = computed(() => {
 watch(addedId, (newVal) => {
   // every time a new added node was set
   if (newVal !== -1) {
-    // hide panel and qs bar
-    closeQsBar();
-    if (showPanel.value) {
-      hidePanel();
-    }
+    //close panel and qs bar
+    clearCurPanelNode();
+    clearCurQuestionNode();
     // set graph to freeze
     forceGraph.setFreezeMode();
   } else {
     forceGraph.resetFreezeMode();
   }
 });
+const cancleAddNode = () => {
+  store.commit("nodeAdder/setRealId", -1);
+};
 const addNode = (payload) => {
   const parentId = payload.id;
   store.dispatch("nodeAdder/startAddNode", parentId);
@@ -506,22 +524,37 @@ onUnmounted(() => {
   }
 
   .add-prompt {
+    $prompt-width: 150px;
+    $width: calc($prompt-width + $icon-size-regular);
+    width: $width;
+    height: 50px;
+
     position: absolute;
     top: 0;
-    width: 200px;
-    height: 50px;
-    left: calc(50% - 100px);
+    left: calc(50% - $prompt-width / 2);
+
     // border: $border;
     // background-color: #fff;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-around;
+
     border-radius: $border-radius;
     font-size: 16px;
     font-weight: $font-weight-bold;
     color: $secondary-color;
     background-color: $primary-color;
     box-shadow: $border-shadow;
+
+    .icon {
+      @include icon-style();
+      background-color: transparent !important;
+      fill: $background-color-dark;
+      &:hover {
+        fill: $secondary-color;
+        background-color: $background-color-dark;
+      }
+    }
   }
 
   .panel-show-icon {
@@ -543,9 +576,6 @@ onUnmounted(() => {
     height: 100%;
     // cancle the bottom blank in inline style
     display: block;
-    &.shadowed {
-      background-color: rgba($primary-color-light, 0.16);
-    }
   }
 }
 </style>
@@ -559,8 +589,12 @@ onUnmounted(() => {
 
 <style lang="scss">
 #svg-container {
+  transition: background 0.1s ease-out;
   .circle-container {
     transition: transform 0.2s ease-out;
+    .base-circle {
+      transition: stroke-width 0.1s ease-out;
+    }
     &.has-hover {
       transform: scale(1.5);
     }
@@ -590,8 +624,15 @@ onUnmounted(() => {
     }
 
     .border {
-      transition: filter 0.2s ease-out;
+      &.shadow {
+        transition: filter 0.2s ease-out;
+      }
+
+      &.stroke {
+        transition: stroke-width 0.1s ease-out;
+      }
     }
+
     &.has-focus {
       .border.stroke {
         transition: stroke 0.2s ease-out;
@@ -614,6 +655,7 @@ onUnmounted(() => {
       }
     }
   }
+  // spinner
   .sp-container {
     display: none;
     &.has-query {
@@ -624,6 +666,44 @@ onUnmounted(() => {
       .sp-bg {
         fill: rgba($primary-color, 0.46);
       }
+    }
+  }
+  .line,
+  .bg-circle {
+    transition: stroke 0.1s ease-out;
+  }
+
+  // style of freeze mode
+  &.shadowed {
+    // background-color: rgba($primary-color-light, 0.26);
+    background-color: #f8f8f9;
+
+    // background: linear-gradient(
+    //   to bottom,
+    //   rgba($primary-color-light, 0.26),
+    //   #fefefe
+    // );
+    .circle-container {
+      &.has-hover {
+        transform: none;
+        .base-circle {
+          stroke: $primary-color;
+          stroke-width: 10px;
+        }
+      }
+    }
+    .vl-body {
+      &.has-hover {
+        .border.stroke {
+          stroke: $primary-color;
+          stroke-width: 16px;
+        }
+      }
+    }
+
+    .bg-circle,
+    .line {
+      // stroke: #fff;
     }
   }
 }
