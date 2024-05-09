@@ -524,6 +524,18 @@ class ForceGraph extends EventEmitter {
           const circleContainer = nodeGs
             .append("g")
             .attr("class", "circle-container");
+
+          // in freeze mode's start node, click event will response
+          const startNodeContainer = circleContainer
+            .filter((d) => d.id === 0)
+            .on("click", function () {
+              if (self.hasFreeze) {
+                self.emit("freeze-node-click", {
+                  id: 0,
+                });
+              }
+            });
+
           // add cursor event above g
           circleContainer
             .filter((d) => d.id !== 0)
