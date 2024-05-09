@@ -61,9 +61,9 @@ export default {
           content: payload.content,
         })
           .then((res) => {
-            console.log("res.data", res.data);
             const data = res.data;
             const newNodeInfo = data.nodes;
+            console.log("from query:", newNodeInfo);
 
             // add tree nodes in tree structure
             context.dispatch("addTreeNode", {
@@ -150,7 +150,6 @@ export default {
     */
     addTreeNode(context, payload) {
       const tree = context.getters["treeData"];
-
       tree.addNodes(
         payload.parent,
         payload.children.map((d) => ({
@@ -173,7 +172,7 @@ export default {
     },
 
     /*
-     * calways happens after change of tree data
+     * always happens after change of tree data
      * construct new link & node data for graph
      * payload: new node info
      */

@@ -480,6 +480,7 @@ class ForceGraph extends EventEmitter {
     const self = this;
     const nodeData = this.nodeData;
     const linkData = this.linkData;
+    console.log("from graph", nodeData);
     const svgContainer = this.svgContainer;
     const nodeTopG = svgContainer.selectChild(".topg-node");
     const linkTopG = svgContainer.selectChild(".topg-link");
@@ -538,7 +539,7 @@ class ForceGraph extends EventEmitter {
               const data = topG.datum();
               // if freeze mode, just emit event and return
               if (self.hasFreeze) {
-                self.emit("add-node-click", {
+                self.emit("freeze-node-click", {
                   id: data.id,
                 });
                 return;
@@ -673,7 +674,7 @@ class ForceGraph extends EventEmitter {
               const data = topG.datum();
               // if freeze mode, just emit event and return
               if (self.hasFreeze) {
-                self.emit("add-node-click", {
+                self.emit("freeze-node-click", {
                   id: data.id,
                 });
                 return;

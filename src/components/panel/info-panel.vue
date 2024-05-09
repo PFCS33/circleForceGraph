@@ -71,7 +71,9 @@
         <div class="oprt-border border">
           <h2 class="title">Operations</h2>
           <div class="content">
-            <button>move</button>
+            <BaseButton style="width: 100%" @click="handleNodeMove"
+              >move</BaseButton
+            >
           </div>
         </div>
       </div>
@@ -122,6 +124,7 @@ const store = useStore();
 const setDataScope = () => {
   store.dispatch("focus/changeDataScope", { ...insightData.scope });
 };
+
 /* -------------------------------------------------------------------------- */
 // history related
 /* -------------------------------------------------------------------------- */
@@ -133,6 +136,13 @@ const questionPath = computed(() => {
 const handleHover = (payload) => {
   const id = payload.id;
   store.dispatch("hover/changeId", id);
+};
+
+/* -------------------------------------------------------------------------- */
+// node move related
+/* -------------------------------------------------------------------------- */
+const handleNodeMove = () => {
+  store.commit("nodeMover/setCurId", id);
 };
 
 /* -------------------------------------------------------------------------- */

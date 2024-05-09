@@ -21,8 +21,17 @@
     <transition name="drop">
       <div v-if="displayAddPrompt" class="add-prompt">
         <div class="text">ADD MODE</div>
-
         <SvgIcon class="icon" iconName="close" @click="cancleAddNode"></SvgIcon>
+      </div>
+    </transition>
+    <transition name="drop">
+      <div v-if="displayMovePrompt" class="add-prompt">
+        <div class="text">MOVE MODE</div>
+        <SvgIcon
+          class="icon"
+          iconName="close"
+          @click="cancleMoveNode"
+        ></SvgIcon>
       </div>
     </transition>
     <transition name="pop">
@@ -151,7 +160,7 @@ watch(graphData, (newVal, oldVal) => {
       forceGraph.on("node-click", setFocusEmitNode);
       forceGraph.on("question-click", setQuestionEmitNode);
       forceGraph.on("node-delete", deleteNode);
-      forceGraph.on("add-node-click", addNode);
+      forceGraph.on("freeze-node-click", setFreeze);
       forceGraph.createForceGraph();
     } else {
       // TODO update graph data
@@ -474,17 +483,26 @@ const setFocusEmitNode = (data) => {
   myTool.reactiveAssign(data, focusEmitNode);
 };
 /* -------------------------------------------------------------------------- */
-// node-adder related
+// node add/move related
 /* -------------------------------------------------------------------------- */
 const addedId = computed(() => {
   return store.getters["nodeAdder/realId"];
 });
+
 const displayAddPrompt = computed(() => {
   return store.getters["nodeAdder/realId"] === -1 ? false : true;
 });
-watch(addedId, (newVal) => {
+
+const cancleAddNode = () => {
+  store.commit("nodeAdder/setRealId", -1);
+};
+
+const moveId = computed(() => {
+  return store.getters["nodeMover/curId"];
+});
+watch([addedId, moveId], (newVals) => {
   // every time a new added node was set
-  if (newVal !== -1) {
+  if (newVals[0] !== -1 || newVals[1] !== -1) {
     //close panel and qs bar
     clearCurPanelNode();
     clearCurQuestionNode();
@@ -494,13 +512,47 @@ watch(addedId, (newVal) => {
     forceGraph.resetFreezeMode();
   }
 });
-const cancleAddNode = () => {
-  store.commit("nodeAdder/setRealId", -1);
-};
-const addNode = (payload) => {
+
+const setFreeze = (payload) => {
+  // set new id of node emitted from freeze mode
   const parentId = payload.id;
-  store.dispatch("nodeAdder/startAddNode", parentId);
+  store.commit("freeze/setId", parentId);
 };
+
+/* -------------------------------------------------------------------------- */
+// node move related
+/* -------------------------------------------------------------------------- */
+
+const parentId = computed(() => {
+  return store.getters["freeze/id"];
+});
+
+const displayMovePrompt = computed(() => {
+  return store.getters["nodeMover/curId"] === -1 ? false : true;
+});
+
+const cancleMoveNode = () => {
+  store.commit("nodeMover/setCurId", -1);
+};
+
+const curMovingId = computed(() => {
+  return store.getters["nodeMover/curId"];
+});
+
+watch(curMovingId, (newVal) => {
+  if (newVal !== -1) {
+    // get node data of current moving data
+    const nodeData = forceGraph.nodeIdMap.get(newVal);
+    store.commit("nodeMover/setNodeData", nodeData);
+  }
+});
+
+watch(parentId, (newVal) => {
+  if (newVal !== -1 && curMovingId.value !== -1) {
+    store.dispatch("nodeMover/startMoveNode");
+  }
+});
+
 /* -------------------------------------------------------------------------- */
 // life cycle hooks
 /* -------------------------------------------------------------------------- */

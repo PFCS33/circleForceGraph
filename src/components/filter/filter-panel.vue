@@ -110,7 +110,6 @@ import { ref, reactive, computed, watch, nextTick, defineComponent } from "vue";
 import { useStore } from "vuex";
 import { getInsights } from "@/api/filter";
 import { drawVl } from "@/utils/vega_lite/vlDrawer.js";
-import { vega } from "vega-embed";
 
 defineComponent({
   name: "FilterPanel",
@@ -160,6 +159,17 @@ const isAddingNode = computed(() => {
 const curAddingId = computed(() => {
   return store.getters["nodeAdder/realId"];
 });
+
+const parentId = computed(() => {
+  return store.getters["freeze/id"];
+});
+
+watch(parentId, (newVal) => {
+  if (newVal !== -1 && curAddingId.value !== -1) {
+    store.dispatch("nodeAdder/startAddNode");
+  }
+});
+
 const handleNodeAdd = (insightData) => {
   // addNewNode(0, insightData);
   // set added node real id

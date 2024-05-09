@@ -1,7 +1,7 @@
 class TreeNode {
   // every node's value must has a 'id' key
   constructor(value, parent = null, children = []) {
-    // object, structure: {id, layer, question}
+    // object, structure: {id, layer, question, relType, relationship}
     this.value = value;
     // list
     this.children = children;
@@ -45,7 +45,17 @@ class Tree {
     }
   }
 
-  /* add node based on source id and targetValues (list)
+  /* move source node to child of target node
+   */
+  moveNode(sourceId, targetId) {
+    const nodeData = this.nodeIdMap.get(sourceId).value;
+    // delete node
+    this.deleteNode(sourceId);
+    // add new node under target
+    this.addNodes(targetId, [nodeData]);
+  }
+
+  /* add new node based on source id and targetValues (list)
    */
   addNodes(sourceId, targetValues) {
     const sourceNode = this.nodeIdMap.get(sourceId);
@@ -89,7 +99,6 @@ class Tree {
    */
   getLinkList() {
     return getLinkListByNode(this.root);
-
     function getLinkListByNode(node) {
       const linkList = [];
       node.children.forEach((childNode) => {
@@ -126,7 +135,7 @@ class Tree {
       if (node) {
         descendantList.push(node.value);
         node.children.forEach((childNode) => {
-          descendantList.push(childNode.value);
+          // descendantList.push(childNode.value);
           const descendants = getDesListByNode(childNode);
           descendantList.push(...descendants);
         });

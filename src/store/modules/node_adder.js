@@ -7,8 +7,6 @@ export default {
       realId: -1,
       // current added node data
       nodeData: null,
-      // parent id provided by circle graph
-      parentId: -1,
       // flag for add processing
       isAdding: false,
     };
@@ -19,9 +17,6 @@ export default {
     },
     nodeData(state) {
       return state.nodeData;
-    },
-    parentId(state) {
-      return state.parentId;
     },
     isAdding(state) {
       return state.isAdding;
@@ -34,17 +29,13 @@ export default {
     setNodeData(state, payload) {
       state.nodeData = payload;
     },
-    setParentId(state, payload) {
-      state.parentId = payload;
-      context.dispatch("startAddNode", payload);
-    },
     setIsAdding(state, payload) {
       state.isAdding = payload;
     },
   },
   actions: {
-    startAddNode(context, payload) {
-      const parentId = payload;
+    startAddNode(context) {
+      const parentId = context.rootGetters["freeze/id"];
       const newNodeData = context.getters["nodeData"];
       context.commit("setIsAdding", true);
       context
@@ -65,6 +56,7 @@ export default {
         .finally(() => {
           context.commit("setIsAdding", false);
           context.commit("setRealId", -1);
+          context.commit("freeze/setId", -1, { root: true });
         });
     },
   },

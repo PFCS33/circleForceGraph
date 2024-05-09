@@ -50,7 +50,6 @@ class PathGraph extends EventEmitter {
   }
 
   createGraph() {
-    console.log(this.pathList);
     const svgContainer = this.setSvgContainer(this.containerId);
     this.svgContainer = svgContainer;
     // append the top g node first
