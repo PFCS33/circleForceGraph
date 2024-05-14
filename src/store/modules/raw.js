@@ -12,6 +12,8 @@ export default {
       graphData: null,
       // columns' name
       colInfoMap: null,
+      // force-graph instance
+      forceGraph: null,
     };
   },
   getters: {
@@ -24,6 +26,9 @@ export default {
     colInfoMap(state) {
       return state.colInfoMap;
     },
+    forceGraph(state) {
+      return state.forceGraph;
+    },
   },
   mutations: {
     setTreeData(state, paylaod) {
@@ -34,6 +39,9 @@ export default {
     },
     setColInfoMap(state, payload) {
       state.colInfoMap = payload;
+    },
+    setForceGraph(state, payload) {
+      state.forceGraph = payload;
     },
   },
   actions: {

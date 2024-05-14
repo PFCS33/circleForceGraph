@@ -399,6 +399,9 @@ class ForceGraph extends EventEmitter {
         newNode = {
           // inherit the oldvalue
           ...oldValue,
+          // ovrride position
+          x: item.x ? item.x : oldValue.x,
+          y: item.y ? item.y : oldValue.y,
           layer: item.layer,
         };
       } else {
@@ -410,6 +413,7 @@ class ForceGraph extends EventEmitter {
           vlConfig: null, // {view, border(w/h/r), img(w/h)}
         };
       }
+
       return newNode;
     });
   }
@@ -425,7 +429,9 @@ class ForceGraph extends EventEmitter {
     // reset other data
     this.resetIdMap();
     this.maxLayer = this.getMaxLayer();
+    console.log("graph before", this.nodeData);
     this.updateDomByData();
+    console.log("graph after", this.nodeData);
     this.rebindSimulation();
   }
 

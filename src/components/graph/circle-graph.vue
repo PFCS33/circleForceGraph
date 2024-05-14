@@ -163,6 +163,7 @@ watch(graphData, (newVal, oldVal) => {
       // forceGraph.on("node-delete", deleteNode);
       forceGraph.on("freeze-node-click", setFreeze);
       forceGraph.createForceGraph();
+      store.commit("setForceGraph", forceGraph);
     } else {
       // TODO update graph data
 

@@ -27,11 +27,13 @@ export default {
   actions: {
     startMoveNode(context) {
       const tree = context.rootGetters.treeData;
+
       const curId = context.getters["curId"];
       const parentId = context.rootGetters["freeze/id"];
       const nodeData = context.getters["nodeData"];
 
       try {
+        // check whether move action is illegal
         if (parentId === curId) {
           throw new Error("You can't move node after itself");
         }
@@ -44,7 +46,7 @@ export default {
         if (descendantIdList.includes(parentId)) {
           throw new Error("You can't move node after its descendants");
         }
-
+        // confirm
         ElMessageBox.confirm(
           "System will delete all descendants of moved node. Continue?",
           "Warning",
@@ -57,7 +59,10 @@ export default {
           .then(() => {
             // modify tree structure
             tree.moveNode(curId, parentId);
-
+            // get position of parent node as initial position
+            const forceGraph = context.rootGetters.forceGraph;
+            nodeData.x = forceGraph.nodeIdMap.get(parentId).x + 100;
+            nodeData.y = forceGraph.nodeIdMap.get(parentId).y + 100;
             // update circle graph
             context.dispatch("updateGraphDataByTree", [nodeData], {
               root: true,
