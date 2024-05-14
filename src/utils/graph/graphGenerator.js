@@ -10,6 +10,7 @@ class ForceGraph extends EventEmitter {
     this.containerViewHeight = 1080;
     // set freeze mode of whole graph
     this.hasFreeze = false;
+    this.freezeFocusId = -1;
     // prepare ref for tooltip
     this.tooltip = null;
     // create id map for nodes & links data
@@ -830,20 +831,20 @@ class ForceGraph extends EventEmitter {
               self.togglePin(data, vlContainer);
             });
 
-          headers
-            .append("use")
-            .attr("href", "#close")
-            .attr("class", "vl-icon close")
-            .attr("cursor", "pointer")
-            .attr("width", vlIconSize)
-            .attr("height", vlIconSize)
-            .on("click", function (e, d) {
-              // if freeze mode, just  return
-              if (self.hasFreeze) {
-                return;
-              }
-              self.emit("node-delete", d.id);
-            });
+          // headers
+          //   .append("use")
+          //   .attr("href", "#close")
+          //   .attr("class", "vl-icon close")
+          //   .attr("cursor", "pointer")
+          //   .attr("width", vlIconSize)
+          //   .attr("height", vlIconSize);
+          // .on("click", function (e, d) {
+          //   // if freeze mode, just  return
+          //   if (self.hasFreeze) {
+          //     return;
+          //   }
+          //   self.emit("node-delete", d.id);
+          // });
           // .style("transform", `translate(${-vlIconSize - vlIconGap}px, ${0})`)
           // container for vl graph
           const vlBoxes = vlBody.append("g").attr("class", "vl-box");
@@ -1007,15 +1008,15 @@ class ForceGraph extends EventEmitter {
         `translate(${-borderWidth / 2}px, ${-borderHeight / 2}px)`
       );
       // set position of header(icons)
-      vlContainer
-        .selectChild(".header")
-        .selectChild(".vl-icon.close")
-        .style(
-          "transform",
-          `translate(${-borderWidth + vlIconGap}px,${
-            vlIconSize + 2 * vlIconGap
-          }px)`
-        );
+      // vlContainer
+      //   .selectChild(".header")
+      //   .selectChild(".vl-icon.close")
+      //   .style(
+      //     "transform",
+      //     `translate(${-borderWidth + vlIconGap}px,${
+      //       vlIconSize + 2 * vlIconGap
+      //     }px)`
+      //   );
       vlContainer
         .selectChild(".header")
         .style(
@@ -1130,10 +1131,19 @@ class ForceGraph extends EventEmitter {
   }
 
   // 'freeze' the graph
-  setFreezeMode() {
+  setFreezeMode(focusId = -1) {
     this.hasFreeze = true;
     // change style of svg
     this.svgContainer.classed("shadowed", true);
+    // set style of focused node in freeze mode
+    if (focusId !== -1) {
+      this.freezeFocusId = focusId;
+      const focusNode = this.svgContainer
+        .selectChild(".topg-node")
+        .selectChildren("g")
+        .filter((d) => d.id === focusId)
+        .classed("freeze-focus", true);
+    }
 
     // stop the simulation
     this.simulation.stop();
@@ -1142,6 +1152,14 @@ class ForceGraph extends EventEmitter {
   // 'unfreeze' the graph
   resetFreezeMode() {
     this.hasFreeze = false;
+    if (this.freezeFocusId !== -1) {
+      this.svgContainer
+        .selectChild(".topg-node")
+        .selectChildren("g")
+        .filter((d) => d.id === this.freezeFocusId)
+        .classed("freeze-focus", false);
+      this.freezeFocusId = -1;
+    }
     // change style of svg
     this.svgContainer.classed("shadowed", false);
     this.simulation.restart();

@@ -1,12 +1,14 @@
 <template>
-  <button :class="['base']">
+  <button :class="['base', type]">
     <slot></slot>
   </button>
 </template>
 
 <script setup>
 import { defineComponent } from "vue";
-
+const props = defineProps({
+  type: String,
+});
 defineComponent({
   name: "BaseButton",
 });
@@ -24,7 +26,7 @@ defineComponent({
   user-select: none;
   padding: 8px 15px;
   font-size: 14px;
-  font-weight: 500px;
+  font-weight: 500;
   // border: 1px solid;
   // border-color: $primary-color-light;
   border: none;
@@ -39,6 +41,16 @@ defineComponent({
     );
   }
   &:active {
+    background-color: $primary-color;
+  }
+}
+
+.outline {
+  border: 1px solid $primary-color;
+  color: $primary-color;
+  background-color: rgba($primary-color-light, 0.05);
+  &:hover {
+    color: #fff;
     background-color: $primary-color;
   }
 }

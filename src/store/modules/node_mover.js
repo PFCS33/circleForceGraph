@@ -50,7 +50,7 @@ export default {
           "Warning",
           {
             confirmButtonText: "OK",
-            cancelButtonText: "Cancel",
+            cancelButtonText: "Back",
             type: "warning",
           }
         )
@@ -66,7 +66,7 @@ export default {
             unFreezeGraph();
           })
           .catch(() => {
-            unFreezeGraph();
+            // unFreezeGraph();
           });
       } catch (err) {
         ElMessage.warning(err.message);

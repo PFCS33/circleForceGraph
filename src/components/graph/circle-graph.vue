@@ -16,6 +16,7 @@
         :realId="panelNode['realId']"
         :id="panelNode.id"
         @hide="hidePanel"
+        @node-delete="deleteNode"
       ></InfoPanel>
     </transition>
     <transition name="drop">
@@ -159,7 +160,7 @@ watch(graphData, (newVal, oldVal) => {
       forceGraph = new ForceGraph(svgContainerId, nodeData, linkData);
       forceGraph.on("node-click", setFocusEmitNode);
       forceGraph.on("question-click", setQuestionEmitNode);
-      forceGraph.on("node-delete", deleteNode);
+      // forceGraph.on("node-delete", deleteNode);
       forceGraph.on("freeze-node-click", setFreeze);
       forceGraph.createForceGraph();
     } else {
@@ -187,11 +188,10 @@ const deleteNode = (id) => {
       store.dispatch("deleteTreeNode", {
         id: id,
       });
-      // clear question state
-      setQuestionEmitNode({
-        id: id,
-        element: null,
-      });
+      // clear focus & question state
+      clearCurQuestionNode();
+      clearCurPanelNode();
+
       ElMessage.success("Delete complete");
     })
     .catch(() => {});
@@ -507,7 +507,8 @@ watch([addedId, moveId], (newVals) => {
     clearCurPanelNode();
     clearCurQuestionNode();
     // set graph to freeze
-    forceGraph.setFreezeMode();
+    const focusId = newVals[1] !== -1 ? newVals[1] : -1;
+    forceGraph.setFreezeMode(focusId);
   } else {
     forceGraph.resetFreezeMode();
   }
@@ -749,6 +750,19 @@ onUnmounted(() => {
         .border.stroke {
           stroke: $primary-color;
           stroke-width: 16px;
+        }
+      }
+    }
+    .freeze-focus {
+      .circle-container {
+        stroke: $primary-color-light;
+        stroke-width: 10px;
+      }
+      .vl-body {
+        .border.stroke {
+          stroke: $primary-color-light;
+          stroke-width: 10px;
+          stroke-dasharray: 10;
         }
       }
     }

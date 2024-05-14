@@ -71,16 +71,22 @@
         <div class="oprt-border border">
           <h2 class="title">Operations</h2>
           <div class="content">
-            <BaseButton style="width: 100%" @click="handleNodeMove"
-              >move</BaseButton
+            <BaseButton
+              style="width: 100%; font-weight: 800"
+              @click="handleNodeMove"
+              type="outline"
+              >MOVE</BaseButton
+            >
+            <BaseButton
+              style="width: 100%; font-weight: 800"
+              @click="handleNodeDelete"
+              type="outline"
+              >DELETE</BaseButton
             >
           </div>
         </div>
       </div>
       <div class="history-page" v-else-if="curTab === 'history'">
-        <!-- <div v-for="node in questionPath" :key="node.id">
-          {{ `id: ${node.id}, question: ${node.question}` }}
-        </div> -->
         <svg id="pg-container"></svg>
       </div>
     </div>
@@ -114,7 +120,7 @@ const props = defineProps({
 });
 const realId = props.realId;
 const id = props.id;
-const emit = defineEmits(["hide"]);
+const emit = defineEmits(["hide", "node-delete"]);
 
 /* -------------------------------------------------------------------------- */
 // store settings
@@ -139,10 +145,14 @@ const handleHover = (payload) => {
 };
 
 /* -------------------------------------------------------------------------- */
-// node move related
+// node operations related
 /* -------------------------------------------------------------------------- */
 const handleNodeMove = () => {
   store.commit("nodeMover/setCurId", id);
+};
+
+const handleNodeDelete = () => {
+  emit("node-delete", id);
 };
 
 /* -------------------------------------------------------------------------- */
@@ -334,6 +344,12 @@ onMounted(() => {
             user-select: none;
           }
         }
+      }
+    }
+
+    .oprt-border {
+      .content {
+        font-size: 14px;
       }
     }
 
