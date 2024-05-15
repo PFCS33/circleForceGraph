@@ -22,13 +22,13 @@ export default {
       const tree = context.rootGetters["treeData"];
       // get path for drawing
       const pathList = tree.getExportPath(tailId);
-
+      // delete the 'zero' node
+      pathList.shift();
       // set export mode to -1
       context.commit("setMode", false);
       // set freeId back to -1
       context.commit("freeze/setId", -1, { root: true });
-
-      function drawPDF(path) {}
+      return pathList;
     },
   },
 };

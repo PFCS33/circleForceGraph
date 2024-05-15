@@ -156,12 +156,12 @@ const store = useStore();
 const exportMode = computed(() => {
   return store.getters["export/mode"];
 });
+
 watch(exportMode, (newVal) => {
   if (newVal) {
     //close panel and qs bar
     clearCurPanelNode();
     clearCurQuestionNode();
-
     forceGraph.setFreezeMode();
   } else {
     forceGraph.resetFreezeMode();

@@ -72,10 +72,10 @@ class ForceGraph extends EventEmitter {
       bgCircleStroke: "#aaa",
       bgCircleWidth: 2.5,
       // tooltip
-      ttWidth: 200,
-      ttHeight: 100,
+      ttWidth: 300,
+      ttHeight: 120,
       ttGap: 15,
-      ttFontSize: 20,
+      ttFontSize: 14,
       textGap: 5,
     };
   }
@@ -201,30 +201,52 @@ class ForceGraph extends EventEmitter {
     }
   }
   createToolTip() {
-    const tooltip = this.svgContainer
-      .append("g")
+    const tooltip = d3
+      .select(this.svgContainer.node().parentNode)
+      .append("div")
       .attr("class", "tooltip")
-      .attr("opacity", 0)
-      .style("pointer-events", "none");
-    tooltip
-      .append("rect")
-      .attr("class", "background")
-      .attr("width", this.defaltDomConfig.ttWidth)
-      .attr("height", this.defaltDomConfig.ttHeight)
-      .style("fill", "#fff")
-      .attr("stroke", this.defaltDomConfig.bgCircleStroke)
-      .attr("stroke-width", this.defaltDomConfig.bgCircleWidth);
-    tooltip
-      .append("text")
-      .attr("class", "text")
-      .style("font-size", this.defaltDomConfig.ttFontSize)
-      .style("fill", "#aaa")
-      .style(
-        "transform",
-        `translate(${this.defaltDomConfig.textGap}px, ${
-          this.defaltDomConfig.ttFontSize + this.defaltDomConfig.textGap
-        }px)`
-      );
+      // .style("width", this.defaltDomConfig.ttWidth + "px")
+      .style("max-width", this.defaltDomConfig.ttWidth + "px")
+      .style("opacity", 0)
+      .style("pointer-events", "none")
+      .style("overflow", "auto")
+      .style("font-size", `${this.defaltDomConfig.ttFontSize}px`)
+      .style("color", "#aaa")
+      .style("border", "1px solid #555")
+      .style("background-color", "#fff")
+      .style("padding", `${this.defaltDomConfig.textGap}px`)
+      .style("z-index", 99)
+      .style("position", "fixed");
+
+    // tooltip
+    //   .append("rect")
+    //   .attr("class", "background")
+    //   .attr("width", this.defaltDomConfig.ttWidth)
+    //   .attr("height", this.defaltDomConfig.ttHeight)
+    //   .style("fill", "#fff")
+    //   .attr("stroke", this.defaltDomConfig.bgCircleStroke)
+    //   .attr("stroke-width", this.defaltDomConfig.bgCircleWidth);
+
+    // tooltip
+    //   .append("foreignObject")
+    //   .attr("width", this.defaltDomConfig.ttWidth)
+    //   .attr("height", this.defaltDomConfig.ttHeight)
+    //   .append("xhtml:div")
+    //   .attr("class", "text")
+    //   .style("width", `${this.defaltDomConfig.ttWidth}px`)
+    //   .style("height", `${this.defaltDomConfig.ttHeight}px`)
+
+    // tooltip
+    //   .append("text")
+    //   .attr("class", "text")
+    //   .style("font-size", this.defaltDomConfig.ttFontSize)
+    //   .style("fill", "#aaa")
+    //   .style(
+    //     "transform",
+    //     `translate(${this.defaltDomConfig.textGap}px, ${
+    //       this.defaltDomConfig.ttFontSize + this.defaltDomConfig.textGap
+    //     }px)`
+    //   );
     this.tooltip = tooltip;
   }
   /* create force simulation
@@ -519,7 +541,7 @@ class ForceGraph extends EventEmitter {
             .attr("stroke", bgCircleStroke)
             .attr("stroke-width", bgCircleWidth)
             .attr("fill", "none")
-            .attr("opacity", 0);
+            .style("opacity", 0);
           this.fadeInTransition(bgCircles, 0.3);
         },
         (update) => update,
@@ -554,7 +576,7 @@ class ForceGraph extends EventEmitter {
           circleContainer
             .filter((d) => d.id !== 0)
             .call(this.dragDefine)
-            .attr("display", function () {
+            .style("display", function () {
               const data = d3.select(this.parentNode).datum();
               return data.showVL ? "none" : null;
             })
@@ -588,7 +610,7 @@ class ForceGraph extends EventEmitter {
               self.fadeOutTransition(circleContainer, "hide");
               // reset attr of vl-container, prepare for animation
               const vlContainer = topG.selectChild(".vl-container");
-              vlContainer.attr("opacity", 0).attr("display", null);
+              vlContainer.style("opacity", 0).style("display", null);
               vlContainer
                 .selectChildren(".border")
                 .attr("width", 0)
@@ -649,7 +671,7 @@ class ForceGraph extends EventEmitter {
             .append("g")
             .call(this.dragDefine)
             .attr("class", "vl-container")
-            .attr("display", function () {
+            .style("display", function () {
               const data = d3.select(this.parentNode).datum();
               return !data.showVL ? "none" : null;
             })
@@ -787,7 +809,7 @@ class ForceGraph extends EventEmitter {
                 vlConfig.border.height
               );
               // prepare base-cirle for fade-in animation
-              circleContainer.attr("display", null).attr("opacity", 0);
+              circleContainer.style("display", null).style("opacity", 0);
               // add animation of base-circle
               self.fadeInTransition(
                 circleContainer,
@@ -939,16 +961,21 @@ class ForceGraph extends EventEmitter {
 
           linkGs
             .on("mouseover", (e, d) => {
-              this.tooltip.selectChild(".text").text(d.relationship);
-              this.tooltip.attr("display", null);
-              this.fadeInTransition(this.tooltip);
+              if (d.relationship && d.relationship !== "") {
+                this.tooltip.text(d.relationship);
+
+                this.tooltip.style("display", null);
+                this.fadeInTransition(this.tooltip);
+
+                // // Calculate the height of the text
+              }
             })
             .on("mousemove", (e, d) => {
-              const [x, y] = d3.pointer(e);
+              const [x, y] = d3.pointer(e, this.svgContainer.node().parentNode);
+
               this.tooltip
-                .selectChildren("*")
-                .attr("x", x + this.defaltDomConfig.ttGap)
-                .attr("y", y + this.defaltDomConfig.ttGap);
+                .style("left", `${x + this.defaltDomConfig.ttGap}px`)
+                .style("top", `${y + this.defaltDomConfig.ttGap}px`);
             })
             .on("mouseout", () => {
               this.fadeOutTransition(this.tooltip, "hide");
@@ -1117,7 +1144,7 @@ class ForceGraph extends EventEmitter {
     vlContainer
       .transition()
       .duration(duration + 100)
-      .attr("opacity", 1);
+      .style("opacity", 1);
   }
   // specific transition for vega-lite graph - out
   vlOutTransition(vlContainer, width, height, duration = this.durationTime) {
@@ -1134,15 +1161,15 @@ class ForceGraph extends EventEmitter {
     vlContainer
       .transition()
       .duration(duration)
-      .attr("opacity", 0)
+      .style("opacity", 0)
       .on("end", function () {
-        vlContainer.attr("display", "none");
+        vlContainer.style("display", "none");
       });
   }
 
   // apply fade-in transition to a selection
   fadeInTransition(selection, opacity = 1, duration = this.durationTime) {
-    selection.transition().duration(duration).attr("opacity", opacity);
+    selection.transition().duration(duration).style("opacity", opacity);
   }
   /* apply fade-out transition to a selection
    * endAction: 'remove' / 'hide'
@@ -1156,12 +1183,12 @@ class ForceGraph extends EventEmitter {
     selection
       .transition()
       .duration(duration)
-      .attr("opacity", 0)
+      .style("opacity", 0)
       .on("end", function () {
         if (endAction === "remove") {
           d3.select(this).remove();
         } else if (endAction === "hide") {
-          d3.select(this).attr("display", "none");
+          d3.select(this).style("display", "none");
         }
       });
   }

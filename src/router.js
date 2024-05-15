@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import MainPage from "./views/main-page.vue";
+import PreviewPage from "./views/preview-page.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -12,6 +13,11 @@ const router = createRouter({
     {
       path: "/main",
       component: MainPage,
+    },
+    {
+      name: "preview",
+      path: "/preview",
+      component: PreviewPage,
     },
   ],
 });

@@ -15,5 +15,7 @@ export default {
       state.id = payload;
     },
   },
-  actions: {},
+  actions: {
+    
+  },
 };

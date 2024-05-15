@@ -23,10 +23,13 @@
 </template>
 <script setup>
 import { ref, onMounted, computed, watch, defineComponent } from "vue";
+import { getNodeDetail, getVlSpec } from "@/api/panel.js";
+import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import CircleGraph from "@/components/graph/circle-graph.vue";
 import FilterPanel from "@/components/filter/filter-panel.vue";
 import SvgIcon from "../components/ui/svg-icon.vue";
+import { PDFGraph } from "@/utils/exporter/PDFGenerator.js";
 
 defineComponent({
   name: "MainPage",
@@ -36,6 +39,7 @@ defineComponent({
 // other
 /* -------------------------------------------------------------------------- */
 const store = useStore();
+const router = useRouter();
 // control timing of creating force graph component
 const isLoading = ref(true);
 /* -------------------------------------------------------------------------- */
@@ -51,9 +55,65 @@ const handleExport = () => {
 const freezeId = computed(() => {
   return store.getters["freeze/id"];
 });
+
+// construct data for pdf-graph
+const constructPdfData = async (data) => {
+  console.log(data);
+  const questionData = data.map((d) => ({ id: d.id, question: d.question }));
+  const relaData = data.map((d) => ({
+    id: d.id,
+    relationship: d.relationship,
+  }));
+  const relTypeData = data.map((d) => ({
+    id: d.id,
+    relType: d.relType,
+  }));
+  questionData.shift();
+  relaData.shift();
+  relTypeData.shift();
+  const idList = data.map((d) => d.id);
+  const realIdList = data.map((d) => d.realId);
+
+  // get vlSpecs
+  const vlSpecListResult = await getVlSpec(realIdList);
+  const vlSpecList = vlSpecListResult.data.vlList;
+
+  // get descriptions
+  const descriptionPromiseList = realIdList.map((id) => getNodeDetail(id));
+  const nodeDetailResults = await Promise.all(descriptionPromiseList);
+  const descriptionList = nodeDetailResults.map((res) => res.data.description);
+  // const relTypeData = nodeDetailResults.map((res) => {
+  //   id: res.data.id;
+  //   relType: res.data.relType;
+  // });
+  const insightData = idList.map((id, index) => ({
+    id: id,
+    description: descriptionList[index],
+    vegaLite: vlSpecList[index],
+  }));
+
+  return {
+    questionData,
+    relaData,
+    insightData,
+    relTypeData,
+  };
+};
+
 watch(freezeId, (newVal) => {
   if (exportMode.value && newVal !== -1) {
-    store.dispatch("export/startExport", newVal);
+    store.dispatch("export/startExport", newVal).then((data) => {
+      constructPdfData(data).then((data) => {
+        const pdfGraph = new PDFGraph(data);
+        pdfGraph.createGraph();
+        // router.push({
+        //   name: "preview",
+        //   query: {
+        //     data: JSON.stringify(data),
+        //   },
+        // });
+      });
+    });
   }
 });
 
