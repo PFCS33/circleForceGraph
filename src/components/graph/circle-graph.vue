@@ -35,6 +35,16 @@
         ></SvgIcon>
       </div>
     </transition>
+    <transition name="drop">
+      <div v-if="exportMode" class="add-prompt">
+        <div class="text">EXPORT MODE</div>
+        <SvgIcon
+          class="icon"
+          iconName="close"
+          @click="cancleExportMode"
+        ></SvgIcon>
+      </div>
+    </transition>
     <transition name="pop">
       <QuestionBar
         class="qsbar"
@@ -139,14 +149,31 @@ import { useStore } from "vuex";
 defineComponent({
   name: "CircleGraph",
 });
+const store = useStore();
 /* -------------------------------------------------------------------------- */
-// emit event
+// export mode
 /* -------------------------------------------------------------------------- */
+const exportMode = computed(() => {
+  return store.getters["export/mode"];
+});
+watch(exportMode, (newVal) => {
+  if (newVal) {
+    //close panel and qs bar
+    clearCurPanelNode();
+    clearCurQuestionNode();
 
+    forceGraph.setFreezeMode();
+  } else {
+    forceGraph.resetFreezeMode();
+  }
+});
+const cancleExportMode = () => {
+  store.commit("export/setMode", false);
+};
 /* -------------------------------------------------------------------------- */
 // get graphData from vuex
 /* -------------------------------------------------------------------------- */
-const store = useStore();
+
 let forceGraph = null;
 const svgContainerId = "#svg-container";
 // data from vuex

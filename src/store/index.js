@@ -6,6 +6,7 @@ import hoverModule from "./modules/hover";
 import nodeAdderModule from "./modules/node_adder";
 import nodeMoverModule from "./modules/node_mover";
 import freezeModule from "./modules/freeze";
+import exportModule from "./modules/export";
 
 // import treeDataModule from "./modules/tree";
 // import graphDataModule from "./modules/graph";
@@ -19,6 +20,7 @@ const store = createStore({
     nodeAdder: nodeAdderModule,
     nodeMover: nodeMoverModule,
     freeze: freezeModule,
+    export: exportModule,
     // tree: treeDataModule,
     // graph: graphDataModule,
     // col: colDataModule,

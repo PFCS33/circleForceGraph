@@ -144,6 +144,23 @@ class Tree {
     }
   }
 
+  getExportPath(nodeId) {
+    const node = this.nodeIdMap.get(nodeId);
+
+    return getExportPathByNode(node);
+    function getExportPathByNode(node) {
+      const path = [];
+      if (node) {
+        if (node.parent) {
+          const frontPath = getExportPathByNode(node.parent);
+          path.push(...frontPath);
+        }
+        path.push(node.value);
+      }
+      return path;
+    }
+  }
+
   getQuesionPath(nodeId) {
     const node = this.nodeIdMap.get(nodeId);
     return getQuesionPathByNode(node);

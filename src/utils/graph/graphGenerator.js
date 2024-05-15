@@ -187,7 +187,16 @@ class ForceGraph extends EventEmitter {
 
         return `M${p1} L${p2} L${p3} L${p4} Z`;
       });
-
+      // move relationship border
+      // linkGs
+      //   .selectChildren(".relationship-border")
+      //   .style(
+      //     "transform",
+      //     (d) =>
+      //       `translate(${(d.target.x + d.source.x) / 2}px,${
+      //         (d.target.y + d.source.y) / 2
+      //       }px)`
+      //   );
       nodeGs.style("transform", (d) => `translate(${d.x}px,${d.y}px)`);
     }
   }
@@ -487,7 +496,6 @@ class ForceGraph extends EventEmitter {
     const self = this;
     const nodeData = this.nodeData;
     const linkData = this.linkData;
-    console.log("from graph", nodeData);
     const svgContainer = this.svgContainer;
     const nodeTopG = svgContainer.selectChild(".topg-node");
     const linkTopG = svgContainer.selectChild(".topg-link");
@@ -495,7 +503,6 @@ class ForceGraph extends EventEmitter {
     // create map between insight category and color
     const CategoryColorMap = d3.scaleOrdinal(
       ["point", "shape", "compound"],
-
       ["#C69DE9", "#F7A69F", "#53C4B6"]
     );
     bgTopG
@@ -875,6 +882,15 @@ class ForceGraph extends EventEmitter {
       .join(
         (enter) => {
           const linkGs = enter.append("g");
+          // add relationship border
+          // linkGs
+          //   .append("rect")
+          //   .attr("class", "relationship-border")
+          //   .attr("width", this.defaltDomConfig.ttWidth)
+          //   .attr("height", this.defaltDomConfig.ttHeight)
+          //   .style("fill", "#fff")
+          //   .attr("stroke", this.defaltDomConfig.bgCircleStroke)
+          //   .attr("stroke-width", this.defaltDomConfig.bgCircleWidth);
           // change style according to relType
           linkGs.each(function (d) {
             const relType = d.relType;
@@ -894,7 +910,14 @@ class ForceGraph extends EventEmitter {
                   .attr("class", "line base-line")
                   .attr("stroke", "#aaa")
                   .attr("stroke-opacity", 0.6)
-                  .attr("stroke-width", 3);
+                  .attr("stroke-width", 5);
+                // add transparent line, make hover easier
+                linkG
+                  .append("line")
+                  .attr("class", "line base-line")
+                  .attr("stroke", "#aaa")
+                  .attr("stroke-opacity", 0)
+                  .attr("stroke-width", 10);
                 break;
               default:
                 linkG
@@ -902,8 +925,15 @@ class ForceGraph extends EventEmitter {
                   .attr("class", "line base-line")
                   .attr("stroke", "#aaa")
                   .attr("stroke-opacity", 0.6)
-                  .attr("stroke-width", 3)
+                  .attr("stroke-width", 5)
                   .style("stroke-dasharray", "10 5");
+                // add transparent line, make hover easier
+                linkG
+                  .append("line")
+                  .attr("class", "line base-line")
+                  .attr("stroke", "#aaa")
+                  .attr("stroke-opacity", 0)
+                  .attr("stroke-width", 20);
             }
           });
 

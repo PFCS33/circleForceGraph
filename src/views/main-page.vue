@@ -7,9 +7,12 @@
   >
     <div class="nav-bar">
       <div class="brand">Exploration</div>
+      <div style="flex-grow: 1"></div>
+      <SvgIcon iconName="upload" class="icon"></SvgIcon>
+      <SvgIcon iconName="export" class="icon" @click="handleExport"></SvgIcon>
     </div>
     <div class="content-box">
-      <div class="filter-box">
+      <div class="filter-box" v-show="!exportMode">
         <FilterPanel></FilterPanel>
       </div>
       <div class="graph-box">
@@ -23,21 +26,37 @@ import { ref, onMounted, computed, watch, defineComponent } from "vue";
 import { useStore } from "vuex";
 import CircleGraph from "@/components/graph/circle-graph.vue";
 import FilterPanel from "@/components/filter/filter-panel.vue";
+import SvgIcon from "../components/ui/svg-icon.vue";
 
 defineComponent({
   name: "MainPage",
 });
 
+/* -------------------------------------------------------------------------- */
+// other
+/* -------------------------------------------------------------------------- */
 const store = useStore();
 // control timing of creating force graph component
 const isLoading = ref(true);
 /* -------------------------------------------------------------------------- */
-// track focus node
+// export mode
 /* -------------------------------------------------------------------------- */
-const curRealId = ref(-1);
-const changeFocusNode = (realId) => {
-  curRealId.value = realId;
+
+const exportMode = computed(() => {
+  return store.getters["export/mode"];
+});
+const handleExport = () => {
+  store.commit("export/setMode", true);
 };
+const freezeId = computed(() => {
+  return store.getters["freeze/id"];
+});
+watch(freezeId, (newVal) => {
+  if (exportMode.value && newVal !== -1) {
+    store.dispatch("export/startExport", newVal);
+  }
+});
+
 // starter
 onMounted(() => {
   // load data
@@ -66,14 +85,18 @@ onMounted(() => {
     width: 100%;
     box-shadow: 0rem 0.2rem 0.3rem 0rem rgba(0, 0, 0, 0.2);
     z-index: $z-top;
-    @include flex-box(column);
-    justify-content: center;
+    @include flex-box();
+    align-items: center;
     padding-left: 1rem;
     background-color: $background-color-light;
     .brand {
       font-size: 2rem;
       font-weight: bold;
       color: $primary-color;
+    }
+    .icon {
+      @include icon-style($icon-size-small);
+      margin-right: 6px;
     }
   }
 
