@@ -939,7 +939,7 @@ class ForceGraph extends EventEmitter {
                   .attr("class", "line base-line")
                   .attr("stroke", "#aaa")
                   .attr("stroke-opacity", 0)
-                  .attr("stroke-width", 10);
+                  .attr("stroke-width", 5);
                 break;
               default:
                 linkG

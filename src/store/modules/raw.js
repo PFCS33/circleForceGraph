@@ -158,6 +158,22 @@ export default {
     */
     addTreeNode(context, payload) {
       const tree = context.getters["treeData"];
+      // const randomNum = Math.floor(Math.random() * 4);
+      // console.log(randomNum);
+      // let randomType = "";
+      // switch (randomNum) {
+      //   case 0:
+      //     randomType = "sameLevel";
+      //     break;
+      //   case 1:
+      //     randomType = "specialization";
+      //     break;
+      //   case 2:
+      //     randomType = "generalization";
+      //     break;
+      // }
+      // console.log(randomType);
+
       tree.addNodes(
         payload.parent,
         payload.children.map((d) => ({
@@ -165,7 +181,7 @@ export default {
           id: d.id,
           realId: d["realId"],
           relType: d.relType || "",
-          relationship: d.relationship || "This is relationship",
+          relationship: d.relationship || "",
           question: payload.question,
         }))
       );

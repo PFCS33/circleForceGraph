@@ -414,7 +414,7 @@ const handleQuery = (paylaod) => {
       ElMessage.success(res.message);
     })
     .catch((e) => {
-      ElMessage.error(`Query Error: ${e.message}`);
+      ElMessage.warning(`Sorry, Internet error occur, please try again later.`);
     })
     .finally(() => {
       const count = deleteQueryState(queryId);
