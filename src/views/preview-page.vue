@@ -5,7 +5,7 @@
 <script setup>
 import { ref, onMounted, computed, watch, defineComponent } from "vue";
 import { useRoute } from "vue-router";
-import { PDFGraph } from "@/utils/exporter/PDFGenerator.js";
+import { PDFGraph } from "@/utils/exporter/treeExporter.js";
 
 defineComponent({
   name: "PreviewPage",

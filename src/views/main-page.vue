@@ -29,7 +29,7 @@ import { useStore } from "vuex";
 import CircleGraph from "@/components/graph/circle-graph.vue";
 import FilterPanel from "@/components/filter/filter-panel.vue";
 import SvgIcon from "../components/ui/svg-icon.vue";
-import { PDFGraph } from "@/utils/exporter/PDFGenerator.js";
+import { PDFGraph } from "@/utils/exporter/treeExporter.js";
 
 defineComponent({
   name: "MainPage",
@@ -56,9 +56,8 @@ const freezeId = computed(() => {
   return store.getters["freeze/id"];
 });
 
-// construct data for pdf-graph
-const constructPdfData = async (data) => {
-  console.log(data);
+// construct data for path-like pdf-graph
+const constructPathData = async (data) => {
   const questionData = data.map((d) => ({ id: d.id, question: d.question }));
   const relaData = data.map((d) => ({
     id: d.id,
@@ -99,20 +98,47 @@ const constructPdfData = async (data) => {
     relTypeData,
   };
 };
+// construct data for tree-like pdf-graph
+const constructTreeData = async (data) => {
+  const nodes = data.nodes;
+
+  const realIdList = nodes.map((d) => d.realId);
+  // get vl-spec info of all nodes
+  const vlSpecListResult = await getVlSpec(realIdList);
+  const vlSpecList = vlSpecListResult.data.vlList;
+  // get description of all nodes
+  const descriptionPromiseList = realIdList.map((id) => getNodeDetail(id));
+  const nodeDetailResults = await Promise.all(descriptionPromiseList);
+  const descriptionList = nodeDetailResults.map((res) => res.data.description);
+  const insightNodes = nodes.map((node, index) => ({
+    ...node,
+    description: descriptionList[index],
+    vegaLite: vlSpecList[index],
+  }));
+  return {
+    nodes: insightNodes,
+    links: data.links,
+  };
+};
 
 watch(freezeId, (newVal) => {
   if (exportMode.value && newVal !== -1) {
     store.dispatch("export/startExport", newVal).then((data) => {
-      constructPdfData(data).then((data) => {
+      constructTreeData(data).then((data) => {
         const pdfGraph = new PDFGraph(data);
         pdfGraph.createGraph();
-        // router.push({
-        //   name: "preview",
-        //   query: {
-        //     data: JSON.stringify(data),
-        //   },
-        // });
       });
+
+      // constructPathData(data).then((data) => {
+      //   const pdfGraph = new PDFGraph(data);
+      //   pdfGraph.createGraph();
+      //   // router.push({
+      //   //   name: "preview",
+      //   //   query: {
+      //   //     data: JSON.stringify(data),
+      //   //   },
+      //   // });
+      // });
     });
   }
 });

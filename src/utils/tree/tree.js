@@ -94,11 +94,12 @@ class Tree {
     return deletedValueList;
   }
 
-  /* get all links in this tree
+  /* get all links in certain subtree
    * return linkList
    */
-  getLinkList() {
-    return getLinkListByNode(this.root);
+  getLinkList(nodeId = this.root.value.id) {
+    const node = this.nodeIdMap.get(nodeId);
+    return getLinkListByNode(node);
     function getLinkListByNode(node) {
       const linkList = [];
       node.children.forEach((childNode) => {
@@ -107,6 +108,7 @@ class Tree {
           target: childNode.value.id,
           relType: childNode.value.relType,
           relationship: childNode.value.relationship,
+          question: childNode.value.question,
         });
         const newLinkList = getLinkListByNode(childNode);
         linkList.push(...newLinkList);
@@ -133,7 +135,11 @@ class Tree {
     function getDesListByNode(node) {
       const descendantList = [];
       if (node) {
-        descendantList.push(node.value);
+        descendantList.push({
+          id: node.value.id,
+          realId: node.value.realId,
+          layer: node.value.layer,
+        });
         node.children.forEach((childNode) => {
           // descendantList.push(childNode.value);
           const descendants = getDesListByNode(childNode);
@@ -158,6 +164,21 @@ class Tree {
         path.push(node.value);
       }
       return path;
+    }
+  }
+
+  getExportTree(nodeId) {
+    const node = this.nodeIdMap.get(nodeId);
+    return getExportTreeByNode(node, -1);
+    function getExportTreeByNode(node, parentId) {
+      const root = new TreeNode({ ...node.value }, parentId);
+      const newChildren = [];
+      for (const childNode of node.children) {
+        const subTreeRoot = getExportTreeByNode(childNode, childNode.value.id);
+        newChildren.push(subTreeRoot);
+      }
+      root.children = newChildren;
+      return root;
     }
   }
 
