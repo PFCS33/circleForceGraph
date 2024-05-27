@@ -6,7 +6,7 @@
     element-loading-text="Computing..."
   >
     <div class="nav-bar">
-      <div class="brand">Exploration</div>
+      <div class="brand">LLM Guided Table Exploration</div>
       <div style="flex-grow: 1"></div>
       <SvgIcon iconName="upload" class="icon"></SvgIcon>
       <SvgIcon iconName="export" class="icon" @click="handleExport"></SvgIcon>

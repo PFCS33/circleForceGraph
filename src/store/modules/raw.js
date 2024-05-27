@@ -158,20 +158,19 @@ export default {
     */
     addTreeNode(context, payload) {
       const tree = context.getters["treeData"];
-      const randomNum = Math.floor(Math.random() * 4);
-
-      let randomType = "";
-      switch (randomNum) {
-        case 0:
-          randomType = "sameLevel";
-          break;
-        case 1:
-          randomType = "specialization";
-          break;
-        case 2:
-          randomType = "generalization";
-          break;
-      }
+      // const randomNum = Math.floor(Math.random() * 4);
+      // let randomType = "";
+      // switch (randomNum) {
+      //   case 0:
+      //     randomType = "sameLevel";
+      //     break;
+      //   case 1:
+      //     randomType = "specialization";
+      //     break;
+      //   case 2:
+      //     randomType = "generalization";
+      //     break;
+      // }
       // console.log(randomType);
 
       tree.addNodes(
@@ -180,8 +179,8 @@ export default {
           // refer to visual id
           id: d.id,
           realId: d["realId"],
-          // relType: d.relType || "",
-          relType: randomType,
+          relType: d.relType || "",
+          // relType: randomType,
           relationship: d.relationship || "",
           question: payload.question,
         }))
