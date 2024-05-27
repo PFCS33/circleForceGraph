@@ -140,25 +140,48 @@ class PathGraph extends EventEmitter {
             .attr("stroke", graphConfig.borderStroke);
 
           // add texts
-          const texts = topGs
+          // const texts = topGs
+          //   .filter((d) => d != 0)
+          //   .append("text")
+          //   .text((d) => pathList[d - 1].question || "NULL")
+          //   .attr("font-size", graphConfig.fontSize)
+          //   .attr("fill", graphConfig.fontColor)
+          //   .attr(
+          //     "x",
+          //     graphConfig.vlSize +
+          //       graphConfig.hGap +
+          //       graphConfig.borderWidth +
+          //       graphConfig.textHGap
+          //   )
+          //   .attr(
+          //     "y",
+          //     graphConfig.borderWidth +
+          //       graphConfig.fontSize +
+          //       graphConfig.textVGap
+          //   );
+          topGs
             .filter((d) => d != 0)
-            .append("text")
-            .text((d) => pathList[d - 1].question || "NULL")
-            .attr("font-size", graphConfig.fontSize)
-            .attr("fill", graphConfig.fontColor)
-            .attr(
-              "x",
-              graphConfig.vlSize +
-                graphConfig.hGap +
-                graphConfig.borderWidth +
-                graphConfig.textHGap
+            .append("foreignObject")
+            .style("width", `${graphConfig.rectWidth}px`)
+            .style("height", `${graphConfig.rectHeight}px`)
+            .style(
+              "transform",
+              `translate(${
+                graphConfig.vlSize + graphConfig.hGap + graphConfig.borderWidth
+              }px, ${graphConfig.borderWidth}px)`
             )
-            .attr(
-              "y",
-              graphConfig.borderWidth +
-                graphConfig.fontSize +
-                graphConfig.textVGap
-            );
+            .append("xhtml:div")
+            .style("width", `${graphConfig.rectWidth}px`)
+            .style("height", `${graphConfig.rectHeight}px`)
+            .style("overflow", "auto")
+            .style("font-size", `${graphConfig.fontSize}px`)
+            .style("color", graphConfig.fontColor)
+            .style(
+              "padding",
+              `${graphConfig.textVGap}px ${graphConfig.textHGap}px`
+            )
+            .style("box-sizing", "border-box")
+            .text((d) => pathList[d - 1].question || "NULL");
 
           // append circle as node in the graph
           // const nodes = topGs
