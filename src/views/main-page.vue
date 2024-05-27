@@ -8,10 +8,39 @@
     <div class="nav-bar">
       <div class="brand">LLM Guided Table Exploration</div>
       <div style="flex-grow: 1"></div>
-      <SvgIcon iconName="upload" class="icon"></SvgIcon>
-      <SvgIcon iconName="export" class="icon" @click="handleExport"></SvgIcon>
+      <div>
+        <SvgIcon
+          iconName="upload"
+          :class="['icon', { disabled: hasProcessed }]"
+          @click="uploadTable"
+        ></SvgIcon>
+        <input
+          type="file"
+          ref="fileInput"
+          @change="handleFileChange"
+          accept=".xls,.xlsx"
+          style="display: none"
+        />
+      </div>
+      <SvgIcon
+        iconName="export"
+        :class="['icon', { disabled: !hasProcessed }]"
+        @click="handleExport"
+      ></SvgIcon>
     </div>
     <div class="content-box">
+      <div
+        class="loading-mask"
+        v-if="!hasProcessed"
+        v-loading="isPreprocessing"
+        element-loading-text="Calculating Insights ..."
+      >
+        <div class="introduction">
+          <div>Upload <strong>.xls/.xlsx</strong> files now</div>
+          <div class="explain">start <em>talking with LLMs</em></div>
+          <div class="explain">& exploring your <em>Insight Stories</em>!</div>
+        </div>
+      </div>
       <div class="filter-box" v-show="!exportMode">
         <FilterPanel></FilterPanel>
       </div>
@@ -143,20 +172,49 @@ watch(freezeId, (newVal) => {
   }
 });
 
-// starter
-onMounted(() => {
-  // load data
-  store
-    .dispatch("initRawData", null)
-    .then((res) => {
-      isLoading.value = false;
+/* -------------------------------------------------------------------------- */
+// table upload
+/* -------------------------------------------------------------------------- */
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    // 限制为 .xls / .xlsx 类型
+    const isExcel =
+      file.type ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      file.type === "application/vnd.ms-excel";
 
-      ElMessage.success(res.message);
-    })
-    .catch((e) => {
-      ElMessage.error(`Data Loading Error: ${e.message}`);
-    });
-});
+    if (!isExcel) {
+      ElMessage.warning(`Incorrect file type, please upload again`);
+      return;
+    } else {
+      isPreprocessing.value = true;
+      store.dispatch("uploadTable", file).then((res) => {
+        // load data
+        store
+          .dispatch("initRawData", null)
+          .then((res) => {
+            isLoading.value = false;
+            isPreprocessing.value = false;
+            hasProcessed.value = true;
+            ElMessage.success(res.message);
+          })
+          .catch((e) => {
+            ElMessage.error(`Data Loading Error: ${e.message}`);
+          });
+      });
+    }
+  }
+};
+const hasProcessed = ref(false);
+const isPreprocessing = ref(false);
+const fileInput = ref(null);
+const uploadTable = () => {
+  fileInput.value.value = null;
+  fileInput.value.click();
+};
+// starter
+onMounted(() => {});
 </script>
 
 <style lang="scss" scoped>
@@ -170,7 +228,7 @@ onMounted(() => {
     flex: auto;
     width: 100%;
     box-shadow: 0rem 0.2rem 0.3rem 0rem rgba(0, 0, 0, 0.2);
-    z-index: $z-top;
+    z-index: $z-top-absolute;
     @include flex-box();
     align-items: center;
     padding-left: 1rem;
@@ -183,6 +241,13 @@ onMounted(() => {
     .icon {
       @include icon-style($icon-size-small);
       margin-right: 6px;
+
+      &.disabled {
+        pointer-events: none;
+        fill: $text-color-light;
+        // background-color: $background-color-dark;
+        // fill: $;
+      }
     }
   }
 
@@ -195,6 +260,40 @@ onMounted(() => {
     }
     .graph-box {
       flex: auto;
+    }
+  }
+}
+
+.loading-mask {
+  position: absolute;
+  z-index: 9;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  /* background-color: rgba(255, 255, 255, 0.8); */
+  background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.9),
+      rgba(255, 255, 255, 0.7)
+    ),
+    url("/pic/user-interface.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center center;
+
+  .introduction {
+    font-size: 6rem;
+    line-height: 120%;
+    position: absolute;
+    top: 15%;
+    left: 10%;
+    color: #545b77;
+    .explain {
+      font-size: 4rem;
+      line-height: 100%;
     }
   }
 }

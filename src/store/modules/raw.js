@@ -61,6 +61,14 @@ export default {
           });
       });
     },
+    // handle table upload
+    uploadTable(context, paylaod) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve();
+        }, 5.4 * 1000);
+      });
+    },
     // post question ,and then add nodes in tree & update graph
     postQuestion(context, payload) {
       return new Promise((resolve, reject) => {
